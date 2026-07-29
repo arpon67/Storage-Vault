@@ -787,6 +787,7 @@ export function StorageProvider({ children }) {
   };
 
   const displayedFolders = useMemo(() => {
+    const normCurrent = currentFolderId ? String(currentFolderId) : null;
     return folders.filter(folder => {
       if (activeCategory === 'trash') return folder.inTrash;
       if (folder.inTrash) return false;
@@ -796,11 +797,13 @@ export function StorageProvider({ children }) {
       if (searchQuery.trim()) {
         return folder.name.toLowerCase().includes(searchQuery.toLowerCase());
       }
-      return (folder.parentId || null) === (currentFolderId || null);
+      const normParent = folder.parentId ? String(folder.parentId) : null;
+      return normParent === normCurrent;
     });
   }, [folders, activeCategory, currentFolderId, searchQuery]);
 
   const displayedFiles = useMemo(() => {
+    const normCurrent = currentFolderId ? String(currentFolderId) : null;
     let result = files.filter(file => {
       if (activeCategory === 'trash') return file.inTrash;
       if (file.inTrash) return false;
@@ -820,7 +823,8 @@ export function StorageProvider({ children }) {
                file.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      return (file.folderId || null) === (currentFolderId || null);
+      const normFolder = file.folderId ? String(file.folderId) : null;
+      return normFolder === normCurrent;
     });
 
     result.sort((a, b) => {

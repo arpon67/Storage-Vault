@@ -66,8 +66,11 @@ export function Breadcrumbs() {
                     transition: 'var(--transition-fast)'
                   }}
                 >
-                  {index === 0 ? <Home size={16} /> : <Folder size={16} />}
+                  {index === 0 ? <Home size={16} /> : <Folder size={16} color="var(--accent-primary)" fill="var(--accent-primary)" />}
                   <span>{item.name}</span>
+                  {isLast && index > 0 && (
+                    <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '6px', background: 'var(--accent-primary)', color: '#fff', fontWeight: 800 }}>OPENED</span>
+                  )}
                 </button>
               </React.Fragment>
             );
