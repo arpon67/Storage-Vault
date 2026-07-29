@@ -115,7 +115,22 @@ function deleteLS(key, id) {
   } catch {}
 }
 
-// ── Files Operations ──────────────────────────────────────────────────────────
+export async function getFileById(id) {
+  try {
+    const db = await initDB();
+    if (db) {
+      const tx = db.transaction('files', 'readonly');
+      const req = tx.objectStore('files').get(id);
+      const res = await new Promise(r => { req.onsuccess = () => r(req.result); req.onerror = () => r(null); });
+      if (res) return res;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+  const lsFiles = getLS(LS_FILES_KEY);
+  return lsFiles.find(f => f.id === id) || null;
+}
+
 export async function getAllFiles() {
   const lsFiles = getLS(LS_FILES_KEY);
   try {

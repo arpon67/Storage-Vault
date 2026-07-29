@@ -1,15 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useStorage } from '../context/StorageContext';
 import { Lock, Download, ShieldCheck, FileText, Music, Video, Image, File, Check, Sparkles } from 'lucide-react';
+import { getFileById } from '../services/dbService';
 
 export function SharedFilePage({ sharedFileId, requiredPasscode }) {
   const { files } = useStorage();
+  const [sharedFile, setSharedFile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [passInput, setPassInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(!requiredPasscode);
   const [errorMsg, setErrorMsg] = useState('');
   const [objectUrl, setObjectUrl] = useState(null);
 
-  const sharedFile = files.find(f => f.id === sharedFileId);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadTargetFile() {
+      const match = files.find(f => f.id === sharedFileId);
+      if (match) {
+        if (isMounted) {
+          setSharedFile(match);
+          setLoading(false);
+        }
+        return;
+      }
+      try {
+        const dbRecord = await getFileById(sharedFileId);
+        if (dbRecord && isMounted) {
+          setSharedFile(dbRecord);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadTargetFile();
+    return () => { isMounted = false; };
+  }, [sharedFileId, files]);
 
   useEffect(() => {
     if (sharedFile?.blob) {
@@ -18,6 +45,17 @@ export function SharedFilePage({ sharedFileId, requiredPasscode }) {
       return () => URL.revokeObjectURL(url);
     }
   }, [sharedFile]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', width: '100vw', background: '#030712', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem', fontWeight: 600 }}>
+          <Sparkles className="spin" size={24} color="var(--accent-primary)" />
+          <span>Decrypting shared vault file...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleUnlock = (e) => {
     e.preventDefault();

@@ -22,7 +22,9 @@ import {
   Play,
   Check,
   RefreshCw,
-  Sliders
+  Sliders,
+  FolderInput,
+  FolderOutput
 } from 'lucide-react';
 
 export function FileGrid() {
@@ -442,9 +444,22 @@ function FileGridCard({ file, activeMenuId, setActiveMenuId, onRename, onEditMed
 }
 
 function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert, onDownload, onPreview, onShare }) {
-  const { moveToTrash, restoreFromTrash, deletePermanently } = useStorage();
+  const { moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, moveItemsToFolder, folders } = useStorage();
 
   const isMedia = item.category === 'image' || item.category === 'video';
+
+  const handleMovePrompt = () => {
+    if (folders.length === 0) {
+      alert('No custom folders found. Please create a folder first!');
+      return;
+    }
+    const folderListStr = folders.map((f, idx) => `${idx + 1}. ${f.name}`).join('\n');
+    const choice = prompt(`Select target folder by entering its number:\n\n${folderListStr}`);
+    const index = parseInt(choice, 10) - 1;
+    if (index >= 0 && index < folders.length) {
+      moveItemsToFolder(item.id, folders[index].id);
+    }
+  };
 
   return (
     <div
@@ -453,7 +468,7 @@ function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert
         position: 'absolute',
         top: '24px',
         right: '0',
-        width: '180px',
+        width: '190px',
         background: 'var(--bg-modal)',
         border: '1px solid var(--border-strong)',
         borderRadius: 'var(--radius-md)',
@@ -479,9 +494,22 @@ function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert
           )}
           {!isFolder && onConvert && (
             <button className="btn btn-ghost" onClick={() => { onConvert(); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-cyan)' }}>
-              <RefreshCw size={14} /> Format Converter Studio
+              <RefreshCw size={14} /> Format Converter
             </button>
           )}
+          {!isFolder && (
+            <button className="btn btn-ghost" onClick={() => { zipSelectedFiles(); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-amber)' }}>
+              <Archive size={14} /> Compress into .ZIP
+            </button>
+          )}
+          {!isFolder && (item.name?.endsWith('.zip') || item.category === 'archive') && (
+            <button className="btn btn-ghost" onClick={() => { unzipFile(item); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-cyan)' }}>
+              <FolderOutput size={14} /> Unzip Archive File
+            </button>
+          )}
+          <button className="btn btn-ghost" onClick={() => { handleMovePrompt(); onClose(); }} style={menuBtnStyle}>
+            <FolderInput size={14} /> Move to Folder...
+          </button>
           {!isFolder && onDownload && (
             <button className="btn btn-ghost" onClick={() => { onDownload(); onClose(); }} style={menuBtnStyle}>
               <Download size={14} /> Download
