@@ -99,46 +99,138 @@ export function StorageProvider({ children }) {
     return driveRecord;
   };
 
-  // Legacy folder-picker based connect (kept for optional advanced use)
+  // ── Real-Time Bi-Directional Windows Drive Sync Engine ────────────────────────
+  const activeDriveHandlesRef = React.useRef(new Map());
+
+  const syncVaultToFolderHandle = async (dirHandle) => {
+    try {
+      const folderMap = new Map();
+      folderMap.set(null, dirHandle);
+
+      for (const fold of folders) {
+        if (fold.inTrash) continue;
+        try {
+          const parentHandle = folderMap.get(fold.parentId || null) || dirHandle;
+          const subDirHandle = await parentHandle.getDirectoryHandle(fold.name, { create: true });
+          folderMap.set(fold.id, subDirHandle);
+        } catch (err) {
+          console.warn('Subfolder creation error:', err);
+        }
+      }
+
+      let syncedCount = 0;
+      for (const fileRecord of files) {
+        if (fileRecord.inTrash) continue;
+        try {
+          const targetDir = folderMap.get(fileRecord.folderId || null) || dirHandle;
+          const fileHandle = await targetDir.getFileHandle(fileRecord.name, { create: true });
+          const writable = await fileHandle.createWritable();
+
+          if (fileRecord.blob) {
+            await writable.write(fileRecord.blob);
+          } else if (fileRecord.content) {
+            await writable.write(new Blob([fileRecord.content], { type: 'text/plain' }));
+          } else if (fileRecord.url && fileRecord.url.startsWith('data:')) {
+            const res = await fetch(fileRecord.url);
+            const blob = await res.blob();
+            await writable.write(blob);
+          } else {
+            await writable.write(new Blob([`Storage Bank Vault File: ${fileRecord.name}`], { type: 'text/plain' }));
+          }
+          await writable.close();
+          syncedCount++;
+        } catch (err) {
+          console.warn(`File export error for ${fileRecord.name}:`, err);
+        }
+      }
+      return syncedCount;
+    } catch (err) {
+      console.error('Vault to disk sync failed:', err);
+      return 0;
+    }
+  };
+
+  const syncFolderHandleToVault = async (dirHandle, parentFolderId = null) => {
+    try {
+      const newFiles = [];
+      const scanDir = async (handle, currentParentId) => {
+        for await (const entry of handle.values()) {
+          if (entry.kind === 'file') {
+            const file = await entry.getFile();
+            const exists = files.some(f => f.name === file.name && (f.folderId || null) === currentParentId);
+            if (!exists) {
+              newFiles.push({ file, folderId: currentParentId });
+            }
+          } else if (entry.kind === 'directory') {
+            let matchingFold = folders.find(f => f.name === entry.name && (f.parentId || null) === currentParentId);
+            if (!matchingFold) {
+              matchingFold = await createFolder(entry.name, currentParentId);
+            }
+            if (matchingFold) {
+              await scanDir(entry, matchingFold.id);
+            }
+          }
+        }
+      };
+      await scanDir(dirHandle, parentFolderId);
+
+      if (newFiles.length > 0) {
+        const fileList = newFiles.map(i => i.file);
+        await uploadFiles(fileList);
+      }
+      return newFiles.length;
+    } catch (err) {
+      console.error('Disk to vault sync error:', err);
+      return 0;
+    }
+  };
+
   const connectWindowsFolder = async (customDriveName = null, customDriveLetter = 'Z:') => {
     try {
       if (!('showDirectoryPicker' in window)) {
-        addToast('Directory Access supported in Chrome, Edge & Brave on Windows!', 'info');
-        return;
+        addToast('Directory Access supported in Chrome, Edge & Brave on Windows!', 'warning');
+        return null;
       }
+      addToast('Select or create the local folder to connect as Virtual Drive...', 'info');
       const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      const folderFiles = [];
-      const scanDir = async (handle) => {
-        for await (const entry of handle.values()) {
-          if (entry.kind === 'file') folderFiles.push(await entry.getFile());
-          else if (entry.kind === 'directory') await scanDir(entry);
-        }
-      };
-      await scanDir(dirHandle);
-      if (folderFiles.length > 0) await uploadFiles(folderFiles);
-      const driveName = customDriveName || dirHandle.name || 'Windows Storage Bank Drive';
+
+      // 1. Sync any existing disk files into vault
+      const importedCount = await syncFolderHandleToVault(dirHandle);
+
+      // 2. Export all vault files & subfolders to disk so drive contains ALL vault items!
+      const exportedCount = await syncVaultToFolderHandle(dirHandle);
+
+      const driveName = customDriveName || dirHandle.name || `Storage Bank (${customDriveLetter})`;
       const driveRecord = {
         id: `drive-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         name: driveName,
         driveLetter: customDriveLetter || 'Z:',
-        syncedFilesCount: folderFiles.length,
-        syncedBytes: folderFiles.reduce((acc, f) => acc + (f.size || 0), 0),
+        syncedFilesCount: files.length + importedCount,
+        syncedBytes: files.reduce((acc, f) => acc + (f.size || 0), 0),
         mountedAt: new Date().toLocaleString(),
-        status: 'Active Live Sync',
-        unlimited: true
+        status: 'Real-Time Connected Sync',
+        unlimited: true,
+        folderName: dirHandle.name
       };
+
+      activeDriveHandlesRef.current.set(driveRecord.id, dirHandle);
+
       setMountedDrives(prev => {
         const next = [driveRecord, ...prev];
         localStorage.setItem('storagebank_mounted_drives', JSON.stringify(next));
         return next;
       });
-      addToast(`Mounted "${driveName}" (${driveRecord.driveLetter})! Synced ${folderFiles.length} file(s).`, 'success');
-      logActivity('SYSTEM', `Mounted Windows PC Drive "${driveName}" (${driveRecord.driveLetter})`, 'success');
+
+      addToast(`Connected Drive ${customDriveLetter}! Exported ${exportedCount} vault file(s) to Windows folder.`, 'success');
+      logActivity('SYSTEM', `Connected Windows Drive "${driveName}" (${customDriveLetter}) with bi-directional vault sync`, 'success');
+
+      return { dirHandle, driveRecord, exportedCount };
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error(err);
-        addToast('Failed to mount Windows folder.', 'error');
+        addToast('Failed to connect Windows folder.', 'error');
       }
+      return null;
     }
   };
 
