@@ -795,7 +795,7 @@ export function StorageProvider({ children }) {
       if (searchQuery.trim()) {
         return folder.name.toLowerCase().includes(searchQuery.toLowerCase());
       }
-      return folder.parentId === currentFolderId;
+      return (folder.parentId || null) === (currentFolderId || null);
     });
   }, [folders, activeCategory, currentFolderId, searchQuery]);
 
@@ -819,7 +819,7 @@ export function StorageProvider({ children }) {
                file.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      return file.folderId === currentFolderId;
+      return (file.folderId || null) === (currentFolderId || null);
     });
 
     result.sort((a, b) => {
