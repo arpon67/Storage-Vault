@@ -33,7 +33,10 @@ export function FileGrid() {
     displayedFiles,
     navigateToFolder,
     activeCategory,
-    setActiveCategory
+    setActiveCategory,
+    currentFolderId,
+    folderPath,
+    setIsUploadOpen
   } = useStorage();
 
   const [visibleCount, setVisibleCount] = useState(60);
@@ -64,6 +67,10 @@ export function FileGrid() {
   };
 
   if (displayedFolders.length === 0 && displayedFiles.length === 0) {
+    const isInsideFolder = currentFolderId !== null;
+    const currentFolderName = isInsideFolder
+      ? (folderPath || []).slice(-1)[0]?.name || 'Folder'
+      : null;
     return (
       <div style={{
         display: 'flex',
@@ -77,24 +84,39 @@ export function FileGrid() {
         border: '1px dashed var(--border-subtle)'
       }}>
         <div style={{
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          background: 'rgba(99, 102, 241, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '16px',
-          color: 'var(--accent-primary)'
+          width: '64px', height: '64px', borderRadius: '50%',
+          background: isInsideFolder ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '16px', color: 'var(--accent-primary)'
         }}>
-          <Folder size={32} />
+          <Folder size={32} fill={isInsideFolder ? 'rgba(99,102,241,0.4)' : 'none'} />
         </div>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>No items in this view</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '360px' }}>
-          {activeCategory === 'trash' 
-            ? 'Trash is completely empty.' 
-            : 'Upload a file or create a folder to start storing your data.'}
-        </p>
+        {isInsideFolder ? (
+          <>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '6px', color: 'var(--text-primary)' }}>
+              📂 &ldquo;{currentFolderName}&rdquo; is open
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '360px', marginBottom: '20px' }}>
+              This folder is empty. Upload files here or create a sub-folder.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsUploadOpen(true)}
+              style={{ padding: '10px 22px', borderRadius: '12px', fontWeight: 700, fontSize: '0.88rem' }}
+            >
+              Upload to &ldquo;{currentFolderName}&rdquo;
+            </button>
+          </>
+        ) : (
+          <>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>No items in this view</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '360px' }}>
+              {activeCategory === 'trash'
+                ? 'Trash is completely empty.'
+                : 'Upload a file or create a folder to start storing your data.'}
+            </p>
+          </>
+        )}
       </div>
     );
   }
