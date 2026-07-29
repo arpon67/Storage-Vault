@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
-import { X, HardDrive, Plus, Trash2, ShieldCheck, RefreshCw, Sparkles, Check, Monitor } from 'lucide-react';
+import { X, HardDrive, Plus, Trash2, ShieldCheck, RefreshCw, Sparkles, Check, Monitor, Download } from 'lucide-react';
 
 export function WindowsDriveModal() {
   const {
@@ -19,8 +19,52 @@ export function WindowsDriveModal() {
 
   const driveLetters = ['Z:', 'Y:', 'X:', 'W:', 'V:', 'U:', 'T:', 'S:', 'R:', 'P:', 'O:', 'N:'];
 
+  const downloadBatScript = (letter = 'Z:', name = 'StorageBank_Vault') => {
+    const batContent = `@echo off
+title Storage Bank Windows Virtual Drive (${letter}) Mount Script
+color 0A
+echo ===================================================
+echo     STORAGE BANK WINDOWS VIRTUAL DRIVE MOUNT (${letter})
+echo ===================================================
+echo.
+
+set "VAULT_DIR=%USERPROFILE%\\StorageBank_Vault"
+set "DRIVE_LETTER=${letter}"
+
+if not exist "%VAULT_DIR%" (
+    mkdir "%VAULT_DIR%"
+    echo [OK] Created Local Storage Vault directory: %VAULT_DIR%
+)
+
+echo [OK] Mounting Storage Bank Vault to Virtual Drive %DRIVE_LETTER%...
+subst %DRIVE_LETTER% "%VAULT_DIR%" >nul 2>&1
+
+if %errorlevel% equ 0 (
+    echo.
+    echo ===================================================
+    echo  SUCCESS! Mounted Storage Bank Drive to %DRIVE_LETTER%
+    echo  Open 'This PC' in File Explorer to view Drive %DRIVE_LETTER%
+    echo ===================================================
+) else (
+    echo [INFO] Drive %DRIVE_LETTER% is already mounted or in use.
+)
+
+echo.
+pause
+`;
+    const blob = new Blob([batContent], { type: 'application/x-bat' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Mount-StorageBank-Drive-${letter.replace(':', '')}.bat`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addToast(`Auto-generated & downloaded 1-Click Mount Script for ${letter}!`, 'success');
+  };
+
   const handleMountNewDrive = async () => {
     await connectWindowsFolder(customName.trim() || null, selectedLetter);
+    downloadBatScript(selectedLetter, customName.trim() || 'StorageBank_Vault');
     setCustomName('');
   };
 
@@ -154,14 +198,25 @@ export function WindowsDriveModal() {
                       </div>
                     </div>
 
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => unmountDrive(drive.id)}
-                      style={{ padding: '6px 12px', fontSize: '0.76rem', borderRadius: '10px', gap: '6px' }}
-                      title="Unmount and remove device"
-                    >
-                      <Trash2 size={14} /> Unmount
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => downloadBatScript(drive.driveLetter, drive.name)}
+                        style={{ padding: '6px 10px', fontSize: '0.76rem', borderRadius: '10px', gap: '4px' }}
+                        title="Download 1-Click Windows .BAT Mount Script"
+                      >
+                        <Download size={13} color="var(--accent-amber)" /> .BAT Script
+                      </button>
+
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => unmountDrive(drive.id)}
+                        style={{ padding: '6px 12px', fontSize: '0.76rem', borderRadius: '10px', gap: '4px' }}
+                        title="Unmount and remove device"
+                      >
+                        <Trash2 size={13} /> Unmount
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

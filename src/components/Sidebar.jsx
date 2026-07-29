@@ -259,7 +259,7 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
 
           <NavItem 
             icon={<Monitor size={18} color="var(--accent-primary)" />} 
-            label="Windows PC Drive (Z:)" 
+            label="Windows PC Drive" 
             isCollapsed={isCollapsed}
             active={false} 
             onClick={() => { setIsDriveModalOpen(true); if (onCloseMobile) onCloseMobile(); }} 
