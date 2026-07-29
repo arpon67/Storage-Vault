@@ -719,19 +719,34 @@ export function StorageProvider({ children }) {
     addToast('Item renamed', 'success');
   };
 
-  const navigateToFolder = (folderId, folderName) => {
+  const navigateToFolder = (folderId, folderName = 'Folder') => {
     setActiveCategory('all');
     setSearchQuery('');
     setCurrentFolderId(folderId);
-    if (folderId === null) {
+
+    if (!folderId) {
       setFolderPath([{ id: null, name: 'My Vault' }]);
-    } else {
-      setFolderPath(prev => {
-        const idx = prev.findIndex(p => p.id === folderId);
-        if (idx >= 0) return prev.slice(0, idx + 1);
-        return [...prev, { id: folderId, name: folderName }];
-      });
+      return;
     }
+
+    // Reconstruct exact root-to-folder hierarchy path
+    const path = [];
+    let currId = folderId;
+    const visited = new Set();
+
+    while (currId && !visited.has(String(currId))) {
+      visited.add(String(currId));
+      const targetFold = folders.find(f => String(f.id) === String(currId));
+      if (targetFold) {
+        path.unshift({ id: targetFold.id, name: targetFold.name });
+        currId = targetFold.parentId;
+      } else {
+        path.unshift({ id: folderId, name: folderName });
+        break;
+      }
+    }
+
+    setFolderPath([{ id: null, name: 'My Vault' }, ...path]);
   };
 
   const toggleSelectItem = (id) => {
@@ -984,10 +999,22 @@ export function StorageProvider({ children }) {
   }, [files, activeCategory, currentFolderId, searchQuery, sortBy, sortOrder]);
 
   const selectAllDisplayedItems = () => {
-    if (selectedItems.length === displayedFiles.length && displayedFiles.length > 0) {
+    const allPageIds = [
+      ...displayedFolders.map(f => f.id),
+      ...displayedFiles.map(f => f.id)
+    ];
+
+    if (allPageIds.length === 0) {
+      setSelectedItems([]);
+      return;
+    }
+
+    const isAllSelected = allPageIds.length <= selectedItems.length && allPageIds.every(id => selectedItems.includes(id));
+
+    if (isAllSelected) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(displayedFiles.map(f => f.id));
+      setSelectedItems(allPageIds);
     }
   };
 

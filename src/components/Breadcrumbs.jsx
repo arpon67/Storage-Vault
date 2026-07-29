@@ -80,7 +80,7 @@ export function Breadcrumbs() {
 
       {/* Right Controls: Select All & Item Counter Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {displayedFiles.length > 0 && (
+        {totalItems > 0 && (
           <button
             className="btn btn-secondary"
             onClick={selectAllDisplayedItems}
@@ -88,11 +88,12 @@ export function Breadcrumbs() {
               padding: '6px 14px', borderRadius: '20px', fontSize: '0.78rem',
               fontWeight: 700, gap: '6px',
               border: selectedItems.length > 0 ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-              color: selectedItems.length > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)'
+              color: selectedItems.length > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              background: selectedItems.length > 0 ? 'rgba(99,102,241,0.12)' : 'transparent'
             }}
           >
             <CheckSquare size={14} />
-            <span>{selectedItems.length === displayedFiles.length ? 'Deselect All' : `Select All (${displayedFiles.length})`}</span>
+            <span>{selectedItems.length >= totalItems && totalItems > 0 ? 'Deselect All' : `Select All (${totalItems})`}</span>
           </button>
         )}
 
