@@ -77,31 +77,45 @@ export function StorageProvider({ children }) {
 
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
 
+  // Instant drive registration — no file picker, BAT script does everything on Windows side
+  const registerDrive = (driveName, driveLetter) => {
+    const driveRecord = {
+      id: `drive-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      name: driveName,
+      driveLetter,
+      syncedFilesCount: 0,
+      syncedBytes: 0,
+      mountedAt: new Date().toLocaleString(),
+      status: 'Pending BAT Setup',
+      unlimited: true
+    };
+    setMountedDrives(prev => {
+      const next = [driveRecord, ...prev];
+      localStorage.setItem('storagebank_mounted_drives', JSON.stringify(next));
+      return next;
+    });
+    addToast(`Drive "${driveName}" (${driveLetter}) registered! Run the downloaded .BAT as Admin.`, 'success');
+    logActivity('SYSTEM', `Registered Windows Drive "${driveName}" (${driveLetter})`, 'success');
+    return driveRecord;
+  };
+
+  // Legacy folder-picker based connect (kept for optional advanced use)
   const connectWindowsFolder = async (customDriveName = null, customDriveLetter = 'Z:') => {
     try {
       if (!('showDirectoryPicker' in window)) {
         addToast('Directory Access supported in Chrome, Edge & Brave on Windows!', 'info');
+        return;
       }
       const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
       const folderFiles = [];
-
-      const scanDir = async (handle, pathPrefix = '') => {
+      const scanDir = async (handle) => {
         for await (const entry of handle.values()) {
-          if (entry.kind === 'file') {
-            const file = await entry.getFile();
-            folderFiles.push(file);
-          } else if (entry.kind === 'directory') {
-            await scanDir(entry, `${pathPrefix}${entry.name}/`);
-          }
+          if (entry.kind === 'file') folderFiles.push(await entry.getFile());
+          else if (entry.kind === 'directory') await scanDir(entry);
         }
       };
-
       await scanDir(dirHandle);
-
-      if (folderFiles.length > 0) {
-        await uploadFiles(folderFiles);
-      }
-
+      if (folderFiles.length > 0) await uploadFiles(folderFiles);
       const driveName = customDriveName || dirHandle.name || 'Windows Storage Bank Drive';
       const driveRecord = {
         id: `drive-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -113,14 +127,12 @@ export function StorageProvider({ children }) {
         status: 'Active Live Sync',
         unlimited: true
       };
-
       setMountedDrives(prev => {
         const next = [driveRecord, ...prev];
         localStorage.setItem('storagebank_mounted_drives', JSON.stringify(next));
         return next;
       });
-
-      addToast(`Mounted "${driveName}" (${driveRecord.driveLetter}) as Windows Live Drive! Synced ${folderFiles.length} file(s).`, 'success');
+      addToast(`Mounted "${driveName}" (${driveRecord.driveLetter})! Synced ${folderFiles.length} file(s).`, 'success');
       logActivity('SYSTEM', `Mounted Windows PC Drive "${driveName}" (${driveRecord.driveLetter})`, 'success');
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -994,6 +1006,7 @@ export function StorageProvider({ children }) {
       renameItem,
       mountedDrives,
       unmountDrive,
+      registerDrive,
       isDriveModalOpen,
       setIsDriveModalOpen,
       connectWindowsFolder,
