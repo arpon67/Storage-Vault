@@ -32,11 +32,19 @@ import { UploadProgressBar } from './components/UploadProgressBar';
 
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { MusicStudioModal } from './components/MusicStudioModal';
+import { SharedFilePage } from './components/SharedFilePage';
 
 import { UploadCloud, Command, Loader2, Folder, Sliders, User } from 'lucide-react';
 
 function AppContent() {
   const { user, authLoading } = useAuth();
+  const params = new URLSearchParams(window.location.search);
+  const shareId = params.get('share');
+  const sharePass = params.get('pass');
+
+  if (shareId) {
+    return <SharedFilePage sharedFileId={shareId} requiredPasscode={sharePass} />;
+  }
   const {
     activeCategory,
     setActiveCategory,

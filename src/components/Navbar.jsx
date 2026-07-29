@@ -30,7 +30,10 @@ export function Navbar({ onOpenAiCopilot }) {
     setIsActivityLogOpen,
     setIsSubscriptionOpen,
     setIsMusicStudioOpen,
-    setActiveCategory
+    setActiveCategory,
+    isMusicPlaying,
+    toggleMusicPlay,
+    currentMusicTrack
   } = useStorage();
 
   const { user, theme, changeTheme, signOut } = useAuth();
@@ -212,17 +215,22 @@ export function Navbar({ onOpenAiCopilot }) {
 
         {/* Music Studio Button */}
         <button
-          className="btn btn-ghost btn-icon"
-          onClick={() => setIsMusicStudioOpen(true)}
-          title="Storage Bank Music Studio & Phonk Player"
-          style={{ position: 'relative' }}
+          className="btn btn-secondary"
+          onClick={() => {
+            if (!isMusicPlaying) toggleMusicPlay(currentMusicTrack);
+            else setIsMusicStudioOpen(true);
+          }}
+          title="Storage Bank Music Studio & Phonk Player — Click to toggle music"
+          style={{
+            padding: '5px 12px', borderRadius: '20px', fontSize: '0.74rem', fontWeight: 800,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+            border: isMusicPlaying ? '1px solid var(--accent-amber)' : '1px solid var(--border-subtle)',
+            background: isMusicPlaying ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.05)',
+            color: isMusicPlaying ? 'var(--accent-amber)' : 'var(--text-muted)'
+          }}
         >
-          <Disc size={20} color="var(--accent-amber)" style={{ animation: 'spin 4s linear infinite' }} />
-          <span style={{
-            position: 'absolute', top: '2px', right: '2px',
-            width: '7px', height: '7px', borderRadius: '50%',
-            background: 'var(--accent-amber)', boxShadow: '0 0 8px var(--accent-amber)'
-          }} />
+          <Disc size={16} color="var(--accent-amber)" style={{ animation: isMusicPlaying ? 'spin 3s linear infinite' : 'none' }} />
+          <span>{isMusicPlaying ? '♪ COOOK PARDON' : 'Play Music'}</span>
         </button>
 
         {/* VIP Plan Badge */}
