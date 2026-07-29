@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
 import { QuickSnippetModal } from './QuickSnippetModal';
-import { DesktopDriveModal } from './DesktopDriveModal';
+
 import {
   Cloud,
   FolderPlus,
@@ -357,7 +357,6 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
       </aside>
 
       <QuickSnippetModal isOpen={isSnippetOpen} onClose={() => setIsSnippetOpen(false)} />
-      <DesktopDriveModal isOpen={isDesktopDriveOpen} onClose={() => setIsDesktopDriveOpen(false)} />
     </>
   );
 }
