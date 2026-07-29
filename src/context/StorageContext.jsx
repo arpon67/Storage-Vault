@@ -122,7 +122,44 @@ export function StorageProvider({ children }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [isMusicStudioOpen, setIsMusicStudioOpen] = useState(false);
   const [activeAudioTrack, setActiveAudioTrack] = useState(null);
+
+  // Site-Wide Background Music State
+  const [currentMusicTrack, setCurrentMusicTrack] = useState(() => {
+    const saved = localStorage.getItem('storagebank_music_track');
+    return saved ? JSON.parse(saved) : { id: '2', title: 'COOOK PARDON', artist: 'Lvbel C5 (Cook Beat)', url: '/music/Lvbel-C5-COOOK-PARDON-63.mp3', genre: 'Phonk Beat' };
+  });
+  const [isMusicPlaying, setIsMusicPlayingRaw] = useState(() => {
+    const saved = localStorage.getItem('storagebank_music_playing');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const setIsMusicPlaying = (valOrFn) => {
+    setIsMusicPlayingRaw(prev => {
+      const nextVal = typeof valOrFn === 'function' ? valOrFn(prev) : valOrFn;
+      localStorage.setItem('storagebank_music_playing', nextVal ? 'true' : 'false');
+      return nextVal;
+    });
+  };
+
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isMusicLooping, setIsMusicLooping] = useState(true);
+
+  const toggleMusicPlay = (track = null) => {
+    if (track) {
+      if (currentMusicTrack?.id === track.id) {
+        setIsMusicPlaying(prev => !prev);
+      } else {
+        setCurrentMusicTrack(track);
+        localStorage.setItem('storagebank_music_track', JSON.stringify(track));
+        setIsMusicPlaying(true);
+      }
+    } else {
+      setIsMusicPlaying(prev => !prev);
+    }
+  };
 
   // Toast Notifications State
   const [toasts, setToasts] = useState([]);
@@ -675,6 +712,14 @@ export function StorageProvider({ children }) {
     return result;
   }, [files, activeCategory, currentFolderId, searchQuery, sortBy, sortOrder]);
 
+  const selectAllDisplayedItems = () => {
+    if (selectedItems.length === displayedFiles.length && displayedFiles.length > 0) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(displayedFiles.map(f => f.id));
+    }
+  };
+
   const storageStats = useMemo(() => {
     const activeFiles = files.filter(f => !f.inTrash);
     let totalBytes = 0;
@@ -723,6 +768,7 @@ export function StorageProvider({ children }) {
       setSortOrder,
       selectedItems,
       toggleSelectItem,
+      selectAllDisplayedItems,
       clearSelection,
       batchMoveToTrash,
       batchRestoreFromTrash,
@@ -746,6 +792,19 @@ export function StorageProvider({ children }) {
       setIsCommandPaletteOpen,
       isActivityLogOpen,
       setIsActivityLogOpen,
+      isSubscriptionOpen,
+      setIsSubscriptionOpen,
+      isMusicStudioOpen,
+      setIsMusicStudioOpen,
+      currentMusicTrack,
+      setCurrentMusicTrack,
+      isMusicPlaying,
+      setIsMusicPlaying,
+      isMusicMuted,
+      setIsMusicMuted,
+      isMusicLooping,
+      setIsMusicLooping,
+      toggleMusicPlay,
       activeAudioTrack,
       setActiveAudioTrack,
       toasts,

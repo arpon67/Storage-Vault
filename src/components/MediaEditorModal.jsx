@@ -150,10 +150,9 @@ export function MediaEditorModal({ file, isOpen, onClose }) {
 
     let sx = 0, sy = 0, sw = img.width, sh = img.height;
 
-    // Calculate crop bounds
     if (cropApplied && cropRect) {
-      const displayW = canvas.clientWidth || img.width;
-      const displayH = canvas.clientHeight || img.height;
+      const displayW = canvas.clientWidth || canvas.offsetWidth || img.width;
+      const displayH = canvas.clientHeight || canvas.offsetHeight || img.height;
       const scaleX = img.width / Math.max(1, displayW);
       const scaleY = img.height / Math.max(1, displayH);
 
@@ -194,11 +193,13 @@ export function MediaEditorModal({ file, isOpen, onClose }) {
 
     if (watermarkText.trim()) {
       ctx.save();
-      ctx.font = `bold ${Math.max(18, Math.floor(outH / 22))}px sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 12;
-      ctx.fillText(watermarkText, 24, outH - 24);
+      ctx.font = `bold ${Math.max(16, Math.round(outW / 25))}px sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 6;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(watermarkText, outW - 20, outH - 20);
       ctx.restore();
     }
   }, [cropAspect, cropApplied, cropRect, rotation, flipH, flipV, watermarkText, getFilterCSS]);
@@ -418,6 +419,7 @@ export function MediaEditorModal({ file, isOpen, onClose }) {
         await replaceFile(file.id, blob, {
           updatedAt: now,
           size: blob.size,
+          videoEdits: blob.videoEdits || null,
           tags: [...(file.tags || []), 'edited']
         });
         addToast(`"${file.name}" updated in Storage Bank!`, 'success');
@@ -432,6 +434,7 @@ export function MediaEditorModal({ file, isOpen, onClose }) {
           category: file.category,
           size: blob.size,
           blob,
+          videoEdits: blob.videoEdits || null,
           starred: false,
           inTrash: false,
           createdAt: now,
@@ -536,40 +539,43 @@ export function MediaEditorModal({ file, isOpen, onClose }) {
             {/* Image Canvas */}
             {isImage && (
               <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <canvas
-                  ref={canvasRef}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
-                    cursor: activeTab === 'crop' ? 'crosshair' : 'default',
-                    userSelect: 'none'
-                  }}
-                  onMouseDown={onCropDown} onMouseMove={onCropMove} onMouseUp={onCropUp} onMouseLeave={onCropUp}
-                  onTouchStart={onCropDown} onTouchMove={onCropMove} onTouchEnd={onCropUp}
-                />
-
-                {/* Crop Box Overlay — ONLY when active Tab is Crop & dragging or crop applied */}
-                {activeTab === 'crop' && cropRect && (dragging || cropApplied) && (
-                  <div
+                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                  <canvas
+                    ref={canvasRef}
                     style={{
-                      position: 'absolute',
-                      left: cropRect.x + 'px', top: cropRect.y + 'px',
-                      width: cropRect.w + 'px', height: cropRect.h + 'px',
-                      border: '2px solid #6366f1', background: 'rgba(99,102,241,0.18)',
-                      boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', pointerEvents: 'none'
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+                      cursor: activeTab === 'crop' ? 'crosshair' : 'default',
+                      userSelect: 'none',
+                      display: 'block'
                     }}
-                  >
-                    {[[-3,-3],['auto',-3],[-3,'auto'],['auto','auto']].map(([t,l],i) => (
-                      <div key={i} style={{
-                        position: 'absolute', width: '10px', height: '10px', background: '#6366f1', borderRadius: '2px',
-                        top: t === -3 ? '-5px' : 'auto', bottom: t === 'auto' ? '-5px' : 'auto',
-                        left: l === -3 ? '-5px' : 'auto', right: l === 'auto' ? '-5px' : 'auto'
-                      }} />
-                    ))}
-                  </div>
-                )}
+                    onMouseDown={onCropDown} onMouseMove={onCropMove} onMouseUp={onCropUp} onMouseLeave={onCropUp}
+                    onTouchStart={onCropDown} onTouchMove={onCropMove} onTouchEnd={onCropUp}
+                  />
+
+                  {/* Crop Box Overlay — ONLY when active Tab is Crop & dragging or crop applied */}
+                  {activeTab === 'crop' && cropRect && (dragging || cropApplied) && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: cropRect.x + 'px', top: cropRect.y + 'px',
+                        width: cropRect.w + 'px', height: cropRect.h + 'px',
+                        border: '2px solid #6366f1', background: 'rgba(99,102,241,0.18)',
+                        boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', pointerEvents: 'none'
+                      }}
+                    >
+                      {[[-3,-3],['auto',-3],[-3,'auto'],['auto','auto']].map(([t,l],i) => (
+                        <div key={i} style={{
+                          position: 'absolute', width: '10px', height: '10px', background: '#6366f1', borderRadius: '2px',
+                          top: t === -3 ? '-5px' : 'auto', bottom: t === 'auto' ? '-5px' : 'auto',
+                          left: l === -3 ? '-5px' : 'auto', right: l === 'auto' ? '-5px' : 'auto'
+                        }} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

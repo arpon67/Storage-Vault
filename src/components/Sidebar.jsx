@@ -23,7 +23,9 @@ import {
   UserCircle2,
   FileCode2,
   Monitor,
-  Sliders
+  Sliders,
+  Disc,
+  Sparkles
 } from 'lucide-react';
 
 export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }) {
@@ -34,6 +36,8 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
     setIsUploadOpen,
     setIsNewFolderOpen,
     setIsAnalyticsOpen,
+    setIsSubscriptionOpen,
+    setIsMusicStudioOpen,
     storageStats
   } = useStorage();
 
@@ -234,6 +238,22 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
             isCollapsed={isCollapsed}
             active={activeCategory === 'converter'} 
             onClick={() => handleCategoryClick('converter')} 
+          />
+
+          <NavItem 
+            icon={<Disc size={18} color="var(--accent-amber)" style={{ animation: 'spin 4s linear infinite' }} />} 
+            label="Music Studio & Phonk" 
+            isCollapsed={isCollapsed}
+            active={false} 
+            onClick={() => { setIsMusicStudioOpen(true); if (onCloseMobile) onCloseMobile(); }} 
+          />
+
+          <NavItem 
+            icon={<Sparkles size={18} color="var(--accent-amber)" className="pulse" />} 
+            label="VIP Plan & 7-Day Trial" 
+            isCollapsed={isCollapsed}
+            active={false} 
+            onClick={() => { setIsSubscriptionOpen(true); if (onCloseMobile) onCloseMobile(); }} 
           />
 
           <NavItem 

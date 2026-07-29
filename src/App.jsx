@@ -30,15 +30,66 @@ import { AiCopilotDrawer } from './components/AiCopilotDrawer';
 import { ToastContainer } from './components/Toast';
 import { UploadProgressBar } from './components/UploadProgressBar';
 
-import { UploadCloud, Command, Loader2 } from 'lucide-react';
+import { SubscriptionModal } from './components/SubscriptionModal';
+import { MusicStudioModal } from './components/MusicStudioModal';
+
+import { UploadCloud, Command, Loader2, Folder, Sliders, User } from 'lucide-react';
 
 function AppContent() {
   const { user, authLoading } = useAuth();
-  const { activeCategory, viewMode, uploadFiles } = useStorage();
+  const {
+    activeCategory,
+    setActiveCategory,
+    viewMode,
+    uploadFiles,
+    setIsUploadOpen,
+    isSubscriptionOpen,
+    setIsSubscriptionOpen,
+    isMusicStudioOpen,
+    setIsMusicStudioOpen,
+    currentMusicTrack,
+    isMusicPlaying,
+    setIsMusicPlaying,
+    isMusicMuted,
+    isMusicLooping
+  } = useStorage();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isWindowDragActive, setIsWindowDragActive] = useState(false);
   const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
+
+  const globalAudioRef = React.useRef(null);
+
+  // Sync background music playback globally across all views & page reloads
+  React.useEffect(() => {
+    const audio = globalAudioRef.current;
+    if (!audio) return;
+
+    if (isMusicPlaying) {
+      const attemptPlay = () => {
+        audio.play().then(() => {
+          // Playing successfully!
+        }).catch(() => {
+          // Autoplay blocked by browser policy — trigger on first user touch/click/scroll anywhere
+          const unlockAudio = () => {
+            if (globalAudioRef.current) {
+              globalAudioRef.current.play().catch(() => {});
+            }
+            ['pointerdown', 'click', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+              window.removeEventListener(evt, unlockAudio);
+            });
+          };
+          ['pointerdown', 'click', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, unlockAudio, { once: true });
+          });
+        });
+      };
+
+      attemptPlay();
+    } else {
+      audio.pause();
+    }
+  }, [isMusicPlaying, currentMusicTrack?.url]);
 
   // Show spinner while Supabase restores session from localStorage
   if (authLoading) {
@@ -86,6 +137,15 @@ function AppContent() {
       onDragLeave={handleWindowDragLeave}
       onDrop={handleWindowDrop}
     >
+      {/* Global Background Music Engine — Plays Across Entire Site */}
+      <audio
+        ref={globalAudioRef}
+        src={currentMusicTrack?.url}
+        muted={isMusicMuted}
+        loop={isMusicLooping}
+        onEnded={() => { if (!isMusicLooping) setIsMusicPlaying(false); }}
+      />
+
       {/* Master PIN Passcode Lock Screen Modal */}
       <VaultPasscodeModal />
 
@@ -164,6 +224,8 @@ function AppContent() {
             }
           }}
           onOpenAiCopilot={() => setIsAiCopilotOpen(true)}
+          onOpenMusicStudio={() => setIsMusicStudioOpen(true)}
+          onOpenSubscription={() => setIsSubscriptionOpen(true)}
         />
 
         {/* Scrollable Main Area */}
@@ -185,6 +247,55 @@ function AppContent() {
             </>
           )}
         </main>
+
+        {/* Mobile Floating Bottom Dock for Smartphone Thumbs */}
+        <div className="mobile-bottom-dock">
+          <button
+            className={`mobile-dock-item ${activeCategory === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveCategory('all')}
+          >
+            <Folder size={20} />
+            <span>Vault</span>
+          </button>
+
+          <button
+            className={`mobile-dock-item ${activeCategory === 'edited' ? 'active' : ''}`}
+            onClick={() => setActiveCategory('edited')}
+          >
+            <Sliders size={20} color="var(--accent-amber)" />
+            <span>Edited</span>
+          </button>
+
+          <button
+            className="mobile-dock-item"
+            onClick={() => setIsUploadOpen(true)}
+            style={{ color: 'var(--accent-primary)' }}
+          >
+            <div style={{
+              width: '38px', height: '38px', borderRadius: '50%',
+              background: 'var(--accent-gradient)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px var(--accent-glow)'
+            }}>
+              <UploadCloud size={20} color="#ffffff" />
+            </div>
+          </button>
+
+          <button
+            className={`mobile-dock-item ${activeCategory === 'converter' ? 'active' : ''}`}
+            onClick={() => setActiveCategory('converter')}
+          >
+            <Command size={20} color="var(--accent-cyan)" />
+            <span>Convert</span>
+          </button>
+
+          <button
+            className={`mobile-dock-item ${activeCategory === 'profile' ? 'active' : ''}`}
+            onClick={() => setActiveCategory('profile')}
+          >
+            <User size={20} />
+            <span>Profile</span>
+          </button>
+        </div>
 
         {/* Raycast Style Keyboard Shortcut Helper Pill */}
         <div style={{
@@ -227,6 +338,8 @@ function AppContent() {
       <StorageAnalyticsModal />
       <ShareModal />
       <AuthModal />
+      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} />
+      <MusicStudioModal isOpen={isMusicStudioOpen} onClose={() => setIsMusicStudioOpen(false)} />
       <ToastContainer />
       <UploadProgressBar />
     </div>

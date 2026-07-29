@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Palette,
   Bot,
+  Music,
+  Disc,
   Sparkles
 } from 'lucide-react';
 
@@ -26,6 +28,8 @@ export function Navbar({ onOpenAiCopilot }) {
     setIsAuthModalOpen,
     setIsCommandPaletteOpen,
     setIsActivityLogOpen,
+    setIsSubscriptionOpen,
+    setIsMusicStudioOpen,
     setActiveCategory
   } = useStorage();
 
@@ -205,6 +209,36 @@ export function Navbar({ onOpenAiCopilot }) {
             <List size={16} />
           </button>
         </div>
+
+        {/* Music Studio Button */}
+        <button
+          className="btn btn-ghost btn-icon"
+          onClick={() => setIsMusicStudioOpen(true)}
+          title="Storage Bank Music Studio & Phonk Player"
+          style={{ position: 'relative' }}
+        >
+          <Disc size={20} color="var(--accent-amber)" style={{ animation: 'spin 4s linear infinite' }} />
+          <span style={{
+            position: 'absolute', top: '2px', right: '2px',
+            width: '7px', height: '7px', borderRadius: '50%',
+            background: 'var(--accent-amber)', boxShadow: '0 0 8px var(--accent-amber)'
+          }} />
+        </button>
+
+        {/* VIP Plan Badge */}
+        <button
+          onClick={() => setIsSubscriptionOpen(true)}
+          style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.25))',
+            border: '1px solid var(--accent-primary)', color: 'var(--accent-amber)',
+            padding: '5px 12px', borderRadius: '20px', fontSize: '0.74rem', fontWeight: 800,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+            boxShadow: '0 0 12px rgba(99,102,241,0.25)'
+          }}
+        >
+          <Sparkles size={14} color="var(--accent-amber)" className="pulse" />
+          <span>PRO TRIAL (7 DAYS)</span>
+        </button>
 
         {/* 12-Theme Palette Selector */}
         <div style={{ position: 'relative' }} ref={themeRef}>

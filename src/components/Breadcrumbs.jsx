@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStorage } from '../context/StorageContext';
-import { ChevronRight, Folder, Home, Sparkles } from 'lucide-react';
+import { ChevronRight, Folder, Home, Sparkles, CheckSquare } from 'lucide-react';
 
 export function Breadcrumbs() {
   const {
@@ -8,7 +8,9 @@ export function Breadcrumbs() {
     navigateToFolder,
     activeCategory,
     displayedFolders,
-    displayedFiles
+    displayedFiles,
+    selectedItems,
+    selectAllDisplayedItems
   } = useStorage();
 
   const totalItems = displayedFolders.length + displayedFiles.length;
@@ -73,20 +75,38 @@ export function Breadcrumbs() {
         )}
       </nav>
 
-      {/* Item Counter Badge */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '0.85rem',
-        color: 'var(--text-muted)',
-        background: 'var(--bg-surface)',
-        padding: '6px 12px',
-        borderRadius: 'var(--radius-full)',
-        border: '1px solid var(--border-subtle)'
-      }}>
-        <Sparkles size={14} color="var(--accent-primary)" />
-        <span>{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
+      {/* Right Controls: Select All & Item Counter Badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {displayedFiles.length > 0 && (
+          <button
+            className="btn btn-secondary"
+            onClick={selectAllDisplayedItems}
+            style={{
+              padding: '6px 14px', borderRadius: '20px', fontSize: '0.78rem',
+              fontWeight: 700, gap: '6px',
+              border: selectedItems.length > 0 ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+              color: selectedItems.length > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)'
+            }}
+          >
+            <CheckSquare size={14} />
+            <span>{selectedItems.length === displayedFiles.length ? 'Deselect All' : `Select All (${displayedFiles.length})`}</span>
+          </button>
+        )}
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '0.85rem',
+          color: 'var(--text-muted)',
+          background: 'var(--bg-surface)',
+          padding: '6px 12px',
+          borderRadius: 'var(--radius-full)',
+          border: '1px solid var(--border-subtle)'
+        }}>
+          <Sparkles size={14} color="var(--accent-primary)" />
+          <span>{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
+        </div>
       </div>
     </div>
   );

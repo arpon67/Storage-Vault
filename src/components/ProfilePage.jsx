@@ -262,6 +262,36 @@ export function ProfilePage() {
           </div>
         </Section>
 
+        {/* ── VIP Subscription Plan ── */}
+        <Section title="VIP Subscription & Plan" icon={<Sparkles size={18} color="var(--accent-amber)" />}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))',
+            border: '1px solid var(--accent-primary)', borderRadius: '16px', padding: '18px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>ACTIVE VAULT PLAN</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-amber)', margin: '4px 0' }}>
+                {user.plan === 'ultra_lifetime' ? '👑 ULTRA LIFETIME VIP' : user.plan === 'pro_monthly' ? '⚡ VAULT PRO MONTHLY' : '🌟 7-DAY VIP FREE TRIAL'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                {user.plan ? 'Unlimited Storage • 120 FPS Engine Active' : '7 Days remaining in your free trial.'}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const modal = document.querySelector('.modal-overlay');
+                if (modal) window.dispatchEvent(new CustomEvent('open-subscription'));
+                else alert('Click the PRO TRIAL button in the top navbar to upgrade!');
+              }}
+              className="btn btn-primary"
+              style={{ padding: '10px 18px', fontSize: '0.82rem', borderRadius: '12px', fontWeight: 800 }}
+            >
+              Manage & Upgrade Plan
+            </button>
+          </div>
+        </Section>
+
         {/* ── Security ── */}
         <Section title="Security" icon={<Shield size={18} />}>
           <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
