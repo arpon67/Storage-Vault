@@ -287,6 +287,8 @@ body::before {
   transform: translateZ(0);
   will-change: transform;
   contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 140px;
 }
 
 .glass-panel:hover {

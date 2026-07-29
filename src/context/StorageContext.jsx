@@ -579,6 +579,7 @@ export function StorageProvider({ children }) {
   };
 
   const navigateToFolder = (folderId, folderName) => {
+    setActiveCategory('all');
     setCurrentFolderId(folderId);
     if (folderId === null) {
       setFolderPath([{ id: null, name: 'My Vault' }]);
