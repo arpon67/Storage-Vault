@@ -6,7 +6,9 @@ import {
   RotateCcw,
   Star,
   CheckSquare,
-  AlertTriangle
+  AlertTriangle,
+  Archive,
+  FolderInput
 } from 'lucide-react';
 
 export function BatchActionBar() {
@@ -16,12 +18,28 @@ export function BatchActionBar() {
     batchMoveToTrash,
     batchDeletePermanently,
     batchRestoreFromTrash,
+    zipSelectedFiles,
+    moveItemsToFolder,
+    folders,
     activeCategory
   } = useStorage();
 
   if (selectedItems.length === 0) return null;
 
   const isTrashView = activeCategory === 'trash';
+
+  const handleMoveToFolderPrompt = () => {
+    if (folders.length === 0) {
+      alert('No custom folders found. Please create a folder first!');
+      return;
+    }
+    const folderListStr = folders.map((f, idx) => `${idx + 1}. ${f.name}`).join('\n');
+    const choice = prompt(`Select target folder by entering its number:\n\n${folderListStr}`);
+    const index = parseInt(choice, 10) - 1;
+    if (index >= 0 && index < folders.length) {
+      moveItemsToFolder(selectedItems, folders[index].id);
+    }
+  };
 
   return (
     <div style={{
@@ -37,43 +55,65 @@ export function BatchActionBar() {
       boxShadow: 'var(--shadow-lg), 0 0 30px var(--accent-glow)',
       display: 'flex',
       alignItems: 'center',
-      gap: '16px',
+      gap: '12px',
       zIndex: 2000,
       animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-primary)' }}>
         <CheckSquare size={18} color="var(--accent-primary)" />
-        <span>{selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected</span>
+        <span>{selectedItems.length} selected</span>
       </div>
 
       <div style={{ height: '20px', width: '1px', background: 'var(--border-subtle)' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {!isTrashView && (
+          <>
+            <button
+              className="btn btn-secondary"
+              onClick={() => zipSelectedFiles()}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', gap: '6px' }}
+              title="Compress selected files into a .ZIP archive"
+            >
+              <Archive size={14} color="var(--accent-amber)" /> Zip Selected (.ZIP)
+            </button>
+
+            <button
+              className="btn btn-secondary"
+              onClick={handleMoveToFolderPrompt}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', gap: '6px' }}
+              title="Move selected items to another folder"
+            >
+              <FolderInput size={14} color="var(--accent-primary)" /> Move to Folder
+            </button>
+          </>
+        )}
+
         {isTrashView ? (
           <>
             <button
               className="btn btn-secondary"
               onClick={batchRestoreFromTrash}
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
             >
-              <RotateCcw size={14} /> Restore Selected
+              <RotateCcw size={14} /> Restore
             </button>
 
             <button
               className="btn btn-danger"
               onClick={batchDeletePermanently}
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
             >
-              <Trash2 size={14} /> Delete Permanently
+              <Trash2 size={14} /> Delete
             </button>
           </>
         ) : (
           <button
             className="btn btn-danger"
             onClick={batchMoveToTrash}
-            style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
           >
-            <Trash2 size={14} /> Move Selected to Trash
+            <Trash2 size={14} /> Move to Trash
           </button>
         )}
       </div>

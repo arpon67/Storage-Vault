@@ -23,6 +23,7 @@ import {
   fetchActivityLogsFromSupabase,
   subscribeToSupabaseRealtime
 } from '../services/supabaseService';
+import coookPardon from '../assets/music/Lvbel-C5-COOOK-PARDON-63.mp3';
 
 const StorageContext = createContext(null);
 
@@ -129,7 +130,7 @@ export function StorageProvider({ children }) {
   // Site-Wide Background Music State
   const [currentMusicTrack, setCurrentMusicTrack] = useState(() => {
     const saved = localStorage.getItem('storagebank_music_track');
-    return saved ? JSON.parse(saved) : { id: '2', title: 'COOOK PARDON', artist: 'Lvbel C5 (Cook Beat)', url: '/music/Lvbel-C5-COOOK-PARDON-63.mp3', genre: 'Phonk Beat' };
+    return saved ? JSON.parse(saved) : { id: '2', title: 'COOOK PARDON', artist: 'Lvbel C5 (Cook Beat)', url: coookPardon, genre: 'Phonk Beat' };
   });
   const [isMusicPlaying, setIsMusicPlayingRaw] = useState(() => {
     const saved = localStorage.getItem('storagebank_music_playing');
@@ -660,6 +661,128 @@ export function StorageProvider({ children }) {
     addToast(`Permanently deleted ${selected.length} item(s)`, 'info');
   };
 
+  // ZIP Selected Files Engine
+  const zipSelectedFiles = async (customZipName = null) => {
+    const selected = selectedItems.length > 0 ? selectedItems : displayedFiles.map(f => f.id);
+    const targetFiles = files.filter(f => selected.includes(f.id) && f.blob);
+
+    if (targetFiles.length === 0) {
+      addToast('No valid files selected to zip.', 'warning');
+      return;
+    }
+
+    addToast(`Compressing ${targetFiles.length} file(s) into ZIP archive...`, 'info');
+    try {
+      const JSZipModule = (await import('jszip')).default;
+      const zip = new JSZipModule();
+
+      targetFiles.forEach(f => {
+        zip.file(f.name, f.blob);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipFileName = customZipName || `Vault_Archive_${Date.now()}.zip`;
+
+      const newZipRecord = {
+        id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        userId: user.id,
+        folderId: currentFolderId,
+        name: zipFileName,
+        type: 'application/zip',
+        category: 'archive',
+        size: zipBlob.size,
+        blob: zipBlob,
+        starred: false,
+        inTrash: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tags: ['archive', 'zip']
+      };
+
+      await saveFile(newZipRecord);
+      clearSelection();
+      addToast(`Created ZIP Archive "${zipFileName}"`, 'success');
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to create ZIP archive.', 'error');
+    }
+  };
+
+  // UNZIP Archive File Engine
+  const unzipFile = async (zipFileRecord) => {
+    if (!zipFileRecord || !zipFileRecord.blob) {
+      addToast('Invalid ZIP file.', 'error');
+      return;
+    }
+
+    try {
+      addToast(`Extracting "${zipFileRecord.name}"...`, 'info');
+      const JSZipModule = (await import('jszip')).default;
+      const zip = new JSZipModule();
+      const content = await zip.loadAsync(zipFileRecord.blob);
+      const extractedFiles = [];
+
+      for (const [filename, fileObj] of Object.entries(content.files)) {
+        if (!fileObj.dir) {
+          const blob = await fileObj.async('blob');
+          const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+
+          let category = 'document';
+          if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) category = 'image';
+          else if (['.mp4', '.webm', '.mov', '.mkv'].includes(ext)) category = 'video';
+          else if (['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) category = 'audio';
+          else if (['.js', '.py', '.html', '.css', '.json', '.jsx'].includes(ext)) category = 'code';
+
+          const newFile = {
+            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+            userId: user.id,
+            folderId: currentFolderId,
+            name: filename.split('/').pop() || filename,
+            type: blob.type || 'application/octet-stream',
+            category,
+            size: blob.size,
+            blob,
+            starred: false,
+            inTrash: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            tags: ['unzipped']
+          };
+
+          await saveFile(newFile);
+          extractedFiles.push(newFile);
+        }
+      }
+
+      addToast(`Unzipped ${extractedFiles.length} file(s) into vault!`, 'success');
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to unzip archive file.', 'error');
+    }
+  };
+
+  // Move Selected Items to Target Folder
+  const moveItemsToFolder = async (itemIds, targetFolderId) => {
+    const ids = Array.isArray(itemIds) ? itemIds : [itemIds];
+    await Promise.all(ids.map(id => {
+      const targetFile = files.find(f => f.id === id);
+      if (targetFile) {
+        const updated = { ...targetFile, folderId: targetFolderId, updatedAt: new Date().toISOString() };
+        return Promise.all([dbSaveFile(updated), syncFileToSupabase(updated)]);
+      }
+      const targetFolder = folders.find(f => f.id === id);
+      if (targetFolder) {
+        const updated = { ...targetFolder, parentId: targetFolderId, updatedAt: new Date().toISOString() };
+        return Promise.all([dbSaveFolder(updated), syncFolderToSupabase(updated)]);
+      }
+      return Promise.resolve();
+    }));
+
+    await reloadVault();
+    clearSelection();
+    addToast(`Moved ${ids.length} item(s) to target folder!`, 'success');
+  };
+
   const displayedFolders = useMemo(() => {
     return folders.filter(folder => {
       if (activeCategory === 'trash') return folder.inTrash;
@@ -773,6 +896,9 @@ export function StorageProvider({ children }) {
       batchMoveToTrash,
       batchRestoreFromTrash,
       batchDeletePermanently,
+      zipSelectedFiles,
+      unzipFile,
+      moveItemsToFolder,
       displayedFolders,
       displayedFiles,
       storageStats,

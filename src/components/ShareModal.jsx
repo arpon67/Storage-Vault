@@ -5,17 +5,24 @@ import { X, Share2, Copy, Check, Lock, Globe, Shield } from 'lucide-react';
 export function ShareModal() {
   const { activeShare, setActiveShare, addToast } = useStorage();
   const [copied, setCopied] = useState(false);
-  const [linkAccess, setLinkAccess] = useState('public'); // 'public', 'passcode'
-  const [sharePasscode, setSharePasscode] = useState('');
+  const [linkAccess, setLinkAccess] = useState('passcode'); // 'public', 'passcode'
+  const [sharePasscode, setSharePasscode] = useState(() => Math.floor(100000 + Math.random() * 900000).toString());
 
   if (!activeShare) return null;
 
-  const shareUrl = `${window.location.origin}/vault/file/${activeShare.id}?key=${Math.random().toString(36).substr(2, 8)}`;
+  const realPasscode = linkAccess === 'passcode' ? sharePasscode : '';
+  const shareUrl = `${window.location.origin}?share=${activeShare.id}${realPasscode ? `&pass=${realPasscode}` : ''}`;
+
+  const generateNewPasscode = () => {
+    const newPin = Math.floor(100000 + Math.random() * 900000).toString();
+    setSharePasscode(newPin);
+    addToast('Generated new 6-digit access passcode!', 'info');
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    addToast('Vault share link copied to clipboard!', 'success');
+    addToast(`Copied real share link ${realPasscode ? `(Passcode: ${realPasscode})` : ''}`, 'success');
     setTimeout(() => setCopied(false), 3000);
   };
 

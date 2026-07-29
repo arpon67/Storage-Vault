@@ -5,10 +5,14 @@ import {
 } from 'lucide-react';
 import { useStorage } from '../context/StorageContext';
 
+import boomShaka from '../assets/music/Boom Shaka - Krsna.mp3';
+import coookPardon from '../assets/music/Lvbel-C5-COOOK-PARDON-63.mp3';
+import starboy from '../assets/music/starboy_ringtone.mp3';
+
 const DEFAULT_PLAYLIST = [
-  { id: '1', title: 'Boom Shaka', artist: 'Krsna (Hindi Popular)', url: '/music/Boom Shaka - Krsna.mp3', genre: 'Hindi Popular' },
-  { id: '2', title: 'COOOK PARDON', artist: 'Lvbel C5 (Cook Beat)', url: '/music/Lvbel-C5-COOOK-PARDON-63.mp3', genre: 'Phonk Beat' },
-  { id: '3', title: 'Starboy (Phonk Remix)', artist: 'The Weeknd', url: '/music/starboy_ringtone.mp3', genre: 'Phonk' }
+  { id: '1', title: 'Boom Shaka', artist: 'Krsna (Hindi Popular)', url: boomShaka, genre: 'Hindi Popular' },
+  { id: '2', title: 'COOOK PARDON', artist: 'Lvbel C5 (Cook Beat)', url: coookPardon, genre: 'Phonk Beat' },
+  { id: '3', title: 'Starboy (Phonk Remix)', artist: 'The Weeknd', url: starboy, genre: 'Phonk' }
 ];
 
 export function MusicStudioModal({ isOpen, onClose }) {
