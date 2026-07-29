@@ -33,11 +33,13 @@ import { UploadProgressBar } from './components/UploadProgressBar';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { MusicStudioModal } from './components/MusicStudioModal';
 import { SharedFilePage } from './components/SharedFilePage';
+import { MoveToFolderModal } from './components/MoveToFolderModal';
 
 import { UploadCloud, Command, Loader2, Folder, Sliders, User } from 'lucide-react';
 
 function AppContent() {
   const { user, authLoading } = useAuth();
+  const { moveModalTarget, setMoveModalTarget } = useStorage();
   const params = new URLSearchParams(window.location.search);
   const shareId = params.get('share');
   const sharePass = params.get('pass');
@@ -348,6 +350,7 @@ function AppContent() {
       <AuthModal />
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} />
       <MusicStudioModal isOpen={isMusicStudioOpen} onClose={() => setIsMusicStudioOpen(false)} />
+      <MoveToFolderModal isOpen={Boolean(moveModalTarget)} onClose={() => setMoveModalTarget(null)} targetItemIds={moveModalTarget} />
       <ToastContainer />
       <UploadProgressBar />
     </div>

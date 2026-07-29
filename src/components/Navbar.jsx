@@ -230,7 +230,7 @@ export function Navbar({ onOpenAiCopilot }) {
           }}
         >
           <Disc size={16} color="var(--accent-amber)" style={{ animation: isMusicPlaying ? 'spin 3s linear infinite' : 'none' }} />
-          <span>{isMusicPlaying ? '♪ COOOK PARDON' : 'Play Music'}</span>
+          <span>{isMusicPlaying ? `♪ ${currentMusicTrack?.title || 'Playing Music'}` : 'Play Music'}</span>
         </button>
 
         {/* VIP Plan Badge */}

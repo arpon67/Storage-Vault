@@ -126,6 +126,7 @@ export function StorageProvider({ children }) {
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isMusicStudioOpen, setIsMusicStudioOpen] = useState(false);
   const [activeAudioTrack, setActiveAudioTrack] = useState(null);
+  const [moveModalTarget, setMoveModalTarget] = useState(null);
 
   // Site-Wide Background Music State
   const [currentMusicTrack, setCurrentMusicTrack] = useState(() => {
@@ -899,6 +900,8 @@ export function StorageProvider({ children }) {
       zipSelectedFiles,
       unzipFile,
       moveItemsToFolder,
+      moveModalTarget,
+      setMoveModalTarget,
       displayedFolders,
       displayedFiles,
       storageStats,

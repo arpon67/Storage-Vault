@@ -19,27 +19,13 @@ export function BatchActionBar() {
     batchDeletePermanently,
     batchRestoreFromTrash,
     zipSelectedFiles,
-    moveItemsToFolder,
-    folders,
+    setMoveModalTarget,
     activeCategory
   } = useStorage();
 
   if (selectedItems.length === 0) return null;
 
   const isTrashView = activeCategory === 'trash';
-
-  const handleMoveToFolderPrompt = () => {
-    if (folders.length === 0) {
-      alert('No custom folders found. Please create a folder first!');
-      return;
-    }
-    const folderListStr = folders.map((f, idx) => `${idx + 1}. ${f.name}`).join('\n');
-    const choice = prompt(`Select target folder by entering its number:\n\n${folderListStr}`);
-    const index = parseInt(choice, 10) - 1;
-    if (index >= 0 && index < folders.length) {
-      moveItemsToFolder(selectedItems, folders[index].id);
-    }
-  };
 
   return (
     <div style={{
@@ -80,7 +66,7 @@ export function BatchActionBar() {
 
             <button
               className="btn btn-secondary"
-              onClick={handleMoveToFolderPrompt}
+              onClick={() => setMoveModalTarget(selectedItems)}
               style={{ padding: '6px 12px', fontSize: '0.8rem', gap: '6px' }}
               title="Move selected items to another folder"
             >

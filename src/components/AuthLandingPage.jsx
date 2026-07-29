@@ -19,10 +19,18 @@ import {
 
 export function AuthLandingPage() {
   const { signUp, signIn, authLoading } = useAuth();
-  const [isRegistering, setIsRegistering] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [rememberMe, setRememberMe]       = useState(true);
+
   const [username, setUsername]           = useState('');
-  const [email, setEmail]                 = useState('');
-  const [password, setPassword]           = useState('');
+  const [email, setEmail]                 = useState(() => {
+    const saved = localStorage.getItem('storagebank_remember_creds');
+    return saved ? JSON.parse(saved).email : '';
+  });
+  const [password, setPassword]           = useState(() => {
+    const saved = localStorage.getItem('storagebank_remember_creds');
+    return saved ? JSON.parse(saved).password : '';
+  });
   const [showPassword, setShowPassword]   = useState(false);
   const [errorMsg, setErrorMsg]           = useState('');
   const [successMsg, setSuccessMsg]       = useState('');
@@ -259,6 +267,19 @@ export function AuthLandingPage() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+          </div>
+
+          {/* Remember Me Checkbox */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 8px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <span>Remember me on this browser</span>
+            </label>
           </div>
 
           <button

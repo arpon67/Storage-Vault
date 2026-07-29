@@ -444,22 +444,9 @@ function FileGridCard({ file, activeMenuId, setActiveMenuId, onRename, onEditMed
 }
 
 function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert, onDownload, onPreview, onShare }) {
-  const { moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, moveItemsToFolder, folders } = useStorage();
+  const { moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, setMoveModalTarget } = useStorage();
 
   const isMedia = item.category === 'image' || item.category === 'video';
-
-  const handleMovePrompt = () => {
-    if (folders.length === 0) {
-      alert('No custom folders found. Please create a folder first!');
-      return;
-    }
-    const folderListStr = folders.map((f, idx) => `${idx + 1}. ${f.name}`).join('\n');
-    const choice = prompt(`Select target folder by entering its number:\n\n${folderListStr}`);
-    const index = parseInt(choice, 10) - 1;
-    if (index >= 0 && index < folders.length) {
-      moveItemsToFolder(item.id, folders[index].id);
-    }
-  };
 
   return (
     <div
@@ -507,7 +494,7 @@ function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert
               <FolderOutput size={14} /> Unzip Archive File
             </button>
           )}
-          <button className="btn btn-ghost" onClick={() => { handleMovePrompt(); onClose(); }} style={menuBtnStyle}>
+          <button className="btn btn-ghost" onClick={() => { setMoveModalTarget([item.id]); onClose(); }} style={menuBtnStyle}>
             <FolderInput size={14} /> Move to Folder...
           </button>
           {!isFolder && onDownload && (
