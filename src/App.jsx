@@ -34,6 +34,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { MusicStudioModal } from './components/MusicStudioModal';
 import { SharedFilePage } from './components/SharedFilePage';
 import { MoveToFolderModal } from './components/MoveToFolderModal';
+import { WindowsDriveModal } from './components/WindowsDriveModal';
 
 import { UploadCloud, Command, Loader2, Folder, Sliders, User } from 'lucide-react';
 
@@ -351,6 +352,7 @@ function AppContent() {
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} />
       <MusicStudioModal isOpen={isMusicStudioOpen} onClose={() => setIsMusicStudioOpen(false)} />
       <MoveToFolderModal isOpen={Boolean(moveModalTarget)} onClose={() => setMoveModalTarget(null)} targetItemIds={moveModalTarget} />
+      <WindowsDriveModal />
       <ToastContainer />
       <UploadProgressBar />
     </div>

@@ -52,12 +52,32 @@ export function StorageProvider({ children }) {
   };
 
   // Live Windows PC Desktop Drive Mount State
-  const [windowsDrive, setWindowsDrive] = useState(() => {
-    const saved = localStorage.getItem('storagebank_windowsDrive');
-    return saved ? JSON.parse(saved) : { mounted: false, folderName: null, syncedFilesCount: 0, syncedBytes: 0, lastSyncTime: null };
+  const [mountedDrives, setMountedDrives] = useState(() => {
+    const saved = localStorage.getItem('storagebank_mounted_drives');
+    if (saved) return JSON.parse(saved);
+    // Legacy single drive migration if exists
+    const legacy = localStorage.getItem('storagebank_windowsDrive');
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (parsed.mounted) {
+        return [{
+          id: 'drive-legacy',
+          name: parsed.folderName || 'Windows Vault (Z:)',
+          driveLetter: 'Z:',
+          syncedFilesCount: parsed.syncedFilesCount || 0,
+          syncedBytes: parsed.syncedBytes || 0,
+          mountedAt: parsed.lastSyncTime || 'Active',
+          status: 'Active Live Sync',
+          unlimited: true
+        }];
+      }
+    }
+    return [];
   });
 
-  const connectWindowsFolder = async () => {
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+
+  const connectWindowsFolder = async (customDriveName = null, customDriveLetter = 'Z:') => {
     try {
       if (!('showDirectoryPicker' in window)) {
         addToast('Directory Access supported in Chrome, Edge & Brave on Windows!', 'info');
@@ -82,18 +102,26 @@ export function StorageProvider({ children }) {
         await uploadFiles(folderFiles);
       }
 
-      const driveState = {
-        mounted: true,
-        folderName: dirHandle.name || 'Windows Vault (Z:)',
+      const driveName = customDriveName || dirHandle.name || 'Windows Storage Bank Drive';
+      const driveRecord = {
+        id: `drive-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        name: driveName,
+        driveLetter: customDriveLetter || 'Z:',
         syncedFilesCount: folderFiles.length,
         syncedBytes: folderFiles.reduce((acc, f) => acc + (f.size || 0), 0),
-        lastSyncTime: new Date().toLocaleTimeString()
+        mountedAt: new Date().toLocaleString(),
+        status: 'Active Live Sync',
+        unlimited: true
       };
 
-      setWindowsDrive(driveState);
-      localStorage.setItem('storagebank_windowsDrive', JSON.stringify(driveState));
-      addToast(`Mounted "${dirHandle.name}" as Windows Live Drive! Synced ${folderFiles.length} file(s).`, 'success');
-      logActivity('SYSTEM', `Mounted Windows PC Drive "${dirHandle.name}"`, 'success');
+      setMountedDrives(prev => {
+        const next = [driveRecord, ...prev];
+        localStorage.setItem('storagebank_mounted_drives', JSON.stringify(next));
+        return next;
+      });
+
+      addToast(`Mounted "${driveName}" (${driveRecord.driveLetter}) as Windows Live Drive! Synced ${folderFiles.length} file(s).`, 'success');
+      logActivity('SYSTEM', `Mounted Windows PC Drive "${driveName}" (${driveRecord.driveLetter})`, 'success');
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error(err);
@@ -102,11 +130,20 @@ export function StorageProvider({ children }) {
     }
   };
 
+  const unmountDrive = (driveId) => {
+    setMountedDrives(prev => {
+      const next = prev.filter(d => d.id !== driveId);
+      localStorage.setItem('storagebank_mounted_drives', JSON.stringify(next));
+      return next;
+    });
+    addToast('Unmounted and removed active device from vault sync.', 'info');
+  };
+
   const disconnectWindowsFolder = () => {
-    const emptyState = { mounted: false, folderName: null, syncedFilesCount: 0, syncedBytes: 0, lastSyncTime: null };
-    setWindowsDrive(emptyState);
+    setMountedDrives([]);
+    localStorage.removeItem('storagebank_mounted_drives');
     localStorage.removeItem('storagebank_windowsDrive');
-    addToast('Unmounted Windows Virtual Drive.', 'info');
+    addToast('Unmounted all active Windows Virtual Drives.', 'info');
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -955,7 +992,10 @@ export function StorageProvider({ children }) {
       restoreFromTrash,
       deletePermanently,
       renameItem,
-      windowsDrive,
+      mountedDrives,
+      unmountDrive,
+      isDriveModalOpen,
+      setIsDriveModalOpen,
       connectWindowsFolder,
       disconnectWindowsFolder,
       logActivity,

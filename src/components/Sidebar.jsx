@@ -38,6 +38,7 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
     setIsAnalyticsOpen,
     setIsSubscriptionOpen,
     setIsMusicStudioOpen,
+    setIsDriveModalOpen,
     storageStats
   } = useStorage();
 
@@ -261,7 +262,7 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onCloseMobile }
             label="Windows PC Drive (Z:)" 
             isCollapsed={isCollapsed}
             active={false} 
-            onClick={() => { setIsDesktopDriveOpen(true); if (onCloseMobile) onCloseMobile(); }} 
+            onClick={() => { setIsDriveModalOpen(true); if (onCloseMobile) onCloseMobile(); }} 
           />
 
           <NavItem 
