@@ -111,13 +111,12 @@ export function FileGrid() {
       }}>
         {/* Folders */}
         {displayedFolders.map(folder => (
-          <MemoizedFolderCard
+          <FolderCard
             key={folder.id}
             folder={folder}
             activeMenuId={activeMenuId}
             setActiveMenuId={setActiveMenuId}
             onRename={() => setRenameTarget({ item: folder, isFolder: true })}
-            onClick={() => !folder.inTrash && navigateToFolder(folder.id, folder.name)}
           />
         ))}
 
@@ -167,14 +166,20 @@ const MemoizedFolderCard = React.memo(FolderCard);
 const MemoizedFileGridCard = React.memo(FileGridCard);
 
 
-function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename, onClick }) {
-  const { toggleStar, selectedItems, toggleSelectItem } = useStorage();
+function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
+  const { toggleStar, selectedItems, toggleSelectItem, navigateToFolder } = useStorage();
   const isSelected = selectedItems.includes(folder.id);
+
+  const handleCardClick = (e) => {
+    if (!folder.inTrash) {
+      navigateToFolder(folder.id, folder.name);
+    }
+  };
 
   return (
     <div
       className="glass-panel"
-      onClick={onClick}
+      onClick={handleCardClick}
       style={{
         borderRadius: 'var(--radius-md)',
         padding: '16px',
