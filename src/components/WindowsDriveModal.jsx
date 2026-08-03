@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
 import {
   X, HardDrive, Trash2, Sparkles, Monitor, Download,
-  CheckCircle2, AlertTriangle
+  CheckCircle2, AlertTriangle, FileCode, Terminal
 } from 'lucide-react';
 
 export function WindowsDriveModal() {
@@ -26,11 +26,12 @@ export function WindowsDriveModal() {
   const isSelectedLetterUsed = usedLetters.includes(selectedLetter);
 
   const buildBat = (letter, name) => {
-    const safeName = (name || 'Storage Bank Vault').trim();
+    const safeName = (name || 'Storage Bank Vault').trim().replace(/"/g, '');
     const letterClean = letter.replace(':', '').trim();
 
     return [
       `@echo off`,
+      `cd /d "%~dp0"`,
       `title Storage Bank Real-Time Unlimited Cloud Drive (${letter})`,
       `color 0B`,
       `cls`,
@@ -43,39 +44,79 @@ export function WindowsDriveModal() {
       `echo =========================================================================`,
       `echo.`,
       ``,
-      `set "LETTER=${letter}"`,
-      `set "LETTER_CLEAN=${letterClean}"`,
-      `set "DRIVE_NAME=${safeName}"`,
-      `set "CLOUD_DIR=%USERPROFILE%\\StorageBank_CloudDrive_${letterClean}"`,
+      `set LETTER=${letter}`,
+      `set LETTER_CLEAN=${letterClean}`,
+      `set DRIVE_NAME=${safeName}`,
+      `set CLOUD_DIR=%USERPROFILE%\\StorageBank_CloudDrive_${letterClean}`,
       ``,
-      `if not exist "%CLOUD_DIR%" mkdir "%CLOUD_DIR%"`,
-      ``,
-      `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\DriveIcons\\${letterClean}\\DefaultLabel" /ve /d "${safeName} (${letter})" /f >nul 2>&1`,
-      ``,
-      `subst ${letter} /d >nul 2>&1`,
-      `subst ${letter} "%CLOUD_DIR%" >nul 2>&1`,
-      ``,
-      `if not exist ${letter}\\ (`,
-      `    powershell -ExecutionPolicy Bypass -Command "New-PSDrive -Name '${letterClean}' -PSProvider FileSystem -Root '%CLOUD_DIR%' -Persist -Scope Global -ErrorAction SilentlyContinue" >nul 2>&1`,
+      `echo [1/3] Creating Storage Vault Cloud Container...`,
+      `if not exist "%CLOUD_DIR%" (`,
+      `    mkdir "%CLOUD_DIR%"`,
       `)`,
       ``,
-      `if exist ${letter}\\ (`,
+      `echo [2/3] Registering Custom Drive Label under 'This PC'...`,
+      `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\DriveIcons\\${letterClean}\\DefaultLabel" /ve /d "${safeName} (${letter})" /f >nul 2>&1`,
+      ``,
+      `echo [3/3] Mounting Virtual Drive ${letter}...`,
+      `subst %LETTER% /d >nul 2>&1`,
+      `subst %LETTER% "%CLOUD_DIR%"`,
+      ``,
+      `if not exist %LETTER%\\ (`,
+      `    powershell -NoProfile -ExecutionPolicy Bypass -Command "New-PSDrive -Name '${letterClean}' -PSProvider FileSystem -Root '$env:USERPROFILE\\StorageBank_CloudDrive_${letterClean}' -Persist -Scope Global -ErrorAction SilentlyContinue" >nul 2>&1`,
+      `)`,
+      ``,
+      `if exist %LETTER%\\ (`,
       `    echo.`,
       `    echo =========================================================================`,
-      `    echo  SUCCESS! ${safeName} (${letter}) is now MOUNTED under 'This PC'!`,
+      `    echo  [SUCCESS] ${safeName} (${letter}) is now MOUNTED under 'This PC'!`,
       `    echo  Unlimited Cloud Storage Vault is active on Drive ${letter}`,
       `    echo =========================================================================`,
       `    echo.`,
-      `    echo  Opening ${letter} in Windows File Explorer...`,
+      `    echo Opening ${letter} in Windows File Explorer...`,
       `    start "" explorer.exe "${letter}\\"`,
       `) else (`,
       `    echo.`,
-      `    echo [ERROR] Drive ${letter} could not be mounted.`,
-      `    echo Please right-click this file and select 'Run as Administrator'.`,
+      `    echo [ERROR] Drive ${letter} could not be mounted. Please try another drive letter.`,
       `)`,
       ``,
       `echo.`,
       `pause`,
+    ].join('\r\n');
+  };
+
+  const buildPs1 = (letter, name) => {
+    const safeName = (name || 'Storage Bank Vault').trim().replace(/'/g, '');
+    const letterClean = letter.replace(':', '').trim();
+
+    return [
+      `# Storage Bank Windows PowerShell Unlimited Cloud Drive Mounter`,
+      `$Letter = "${letter}"`,
+      `$LetterClean = "${letterClean}"`,
+      `$DriveName = "${safeName}"`,
+      `$CloudDir = Join-Path $env:USERPROFILE "StorageBank_CloudDrive_${letterClean}"`,
+      ``,
+      `if (!(Test-Path $CloudDir)) {`,
+      `    New-Item -ItemType Directory -Path $CloudDir -Force | Out-Null`,
+      `}`,
+      ``,
+      `# Register Custom Volume Label in Windows Explorer (This PC)`,
+      `$RegPath = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\DriveIcons\\${letterClean}\\DefaultLabel"`,
+      `if (!(Test-Path $RegPath)) { New-Item -Path $RegPath -Force | Out-Null }`,
+      `Set-ItemProperty -Path $RegPath -Name "(default)" -Value "${safeName} (${letter})" -Force | Out-Null`,
+      ``,
+      `try { subst ${letter} /d 2>$null } catch {}`,
+      `subst ${letter} $CloudDir | Out-Null`,
+      ``,
+      `if (!(Test-Path "${letter}\\")) {`,
+      `    New-PSDrive -Name $LetterClean -PSProvider FileSystem -Root $CloudDir -Persist -Scope Global -ErrorAction SilentlyContinue | Out-Null`,
+      `}`,
+      ``,
+      `if (Test-Path "${letter}\\") {`,
+      `    Write-Host "SUCCESS: ${safeName} (${letter}) mounted under This PC!" -ForegroundColor Green`,
+      `    Invoke-Item "${letter}\\"`,
+      `} else {`,
+      `    Write-Host "ERROR: Could not mount Drive ${letter}" -ForegroundColor Red`,
+      `}`,
     ].join('\r\n');
   };
 
@@ -86,6 +127,17 @@ export function WindowsDriveModal() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Mount-CloudDrive-${letter.replace(':', '')}-${(name || 'Vault').replace(/[^a-zA-Z0-9]/g, '_')}.bat`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadPs1 = (letter, name) => {
+    const content = buildPs1(letter, name);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Mount-CloudDrive-${letter.replace(':', '')}-${(name || 'Vault').replace(/[^a-zA-Z0-9]/g, '_')}.ps1`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -101,6 +153,19 @@ export function WindowsDriveModal() {
     downloadBat(selectedLetter, name);
     setJustCreated({ name, letter: selectedLetter });
     addToast(`Generated auto-mounter .BAT script for ${name} (${selectedLetter})!`, 'success');
+  };
+
+  const handleGeneratePs1 = () => {
+    const name = driveName.trim() || `Storage Bank Vault (${selectedLetter})`;
+    if (isSelectedLetterUsed) {
+      addToast(`Drive ${selectedLetter} is already in use. Pick an unused drive letter or remove the existing drive below.`, 'warning');
+      return;
+    }
+
+    registerDrive(name, selectedLetter);
+    downloadPs1(selectedLetter, name);
+    setJustCreated({ name, letter: selectedLetter });
+    addToast(`Generated PowerShell .PS1 script for ${name} (${selectedLetter})!`, 'success');
   };
 
   return (
@@ -133,7 +198,7 @@ export function WindowsDriveModal() {
                 <CheckCircle2 size={22} color="#10b981" />
                 <div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981' }}>
-                    Drive {justCreated.letter} Registered & .BAT Downloaded!
+                    Drive {justCreated.letter} Registered & Script Downloaded!
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     Drive Name: "{justCreated.name}"
@@ -208,19 +273,33 @@ export function WindowsDriveModal() {
               </div>
             )}
 
-            {/* Single Download BAT Action */}
-            <button
-              className="btn btn-primary"
-              disabled={isSelectedLetterUsed}
-              onClick={handleGenerateBat}
-              style={{
-                width: '100%', padding: '13px', borderRadius: '12px', fontWeight: 800, gap: '10px',
-                justify: 'center', fontSize: '0.92rem', background: isSelectedLetterUsed ? 'var(--border-subtle)' : 'linear-gradient(135deg, #6366f1, #06b6d4)',
-                cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <Download size={16} /> Download Auto-Mount .BAT Script ({selectedLetter})
-            </button>
+            {/* Script Download Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                className="btn btn-primary"
+                disabled={isSelectedLetterUsed}
+                onClick={handleGenerateBat}
+                style={{
+                  width: '100%', padding: '13px', borderRadius: '12px', fontWeight: 800, gap: '10px',
+                  justify: 'center', fontSize: '0.92rem', background: isSelectedLetterUsed ? 'var(--border-subtle)' : 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                  cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <Download size={16} /> Download Auto-Mount .BAT Script ({selectedLetter})
+              </button>
+
+              <button
+                className="btn btn-secondary"
+                disabled={isSelectedLetterUsed}
+                onClick={handleGeneratePs1}
+                style={{
+                  width: '100%', padding: '9px', borderRadius: '10px', fontSize: '0.8rem',
+                  justify: 'center', gap: '8px'
+                }}
+              >
+                <Terminal size={14} /> Download PowerShell .PS1 Mounter
+              </button>
+            </div>
 
           </div>
 
