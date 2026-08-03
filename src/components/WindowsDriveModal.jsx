@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
 import {
   X, HardDrive, Trash2, Sparkles, Monitor, Download,
-  CheckCircle2, AlertTriangle, RefreshCw, FolderOpen
+  CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
 export function WindowsDriveModal() {
@@ -11,14 +11,12 @@ export function WindowsDriveModal() {
     setIsDriveModalOpen,
     mountedDrives,
     unmountDrive,
-    connectWindowsFolder,
     registerDrive,
     addToast
   } = useStorage();
 
-  const [driveName, setDriveName] = useState('Storage Bank Unlimited Vault');
+  const [driveName, setDriveName] = useState('Storage Bank Vault');
   const [selectedLetter, setSelectedLetter] = useState('Z:');
-  const [isSyncing, setIsSyncing] = useState(false);
   const [justCreated, setJustCreated] = useState(null);
 
   if (!isDriveModalOpen) return null;
@@ -52,7 +50,7 @@ export function WindowsDriveModal() {
       ``,
       `if not exist "%CLOUD_DIR%" (`,
       `    mkdir "%CLOUD_DIR%"`,
-      `    echo  [OK] Created Storage Vault Cloud Directory: %CLOUD_DIR%`,
+      `    echo  [OK] Created Storage Vault Cloud Container: %CLOUD_DIR%`,
       `)`,
       ``,
       `echo  [OK] Registering custom Drive Label under 'This PC' in Windows File Explorer...`,
@@ -93,39 +91,16 @@ export function WindowsDriveModal() {
   };
 
   const handleGenerateBat = () => {
-    const name = driveName.trim() || `Storage Bank Unlimited Vault (${selectedLetter})`;
+    const name = driveName.trim() || `Storage Bank Vault (${selectedLetter})`;
     if (isSelectedLetterUsed) {
-      addToast(`Drive ${selectedLetter} is already in use. Pick an unused letter or remove existing drive.`, 'warning');
+      addToast(`Drive ${selectedLetter} is already in use. Pick an unused drive letter or remove the existing drive below.`, 'warning');
       return;
     }
 
     registerDrive(name, selectedLetter);
     downloadBat(selectedLetter, name);
     setJustCreated({ name, letter: selectedLetter });
-    addToast(`Generated .BAT script for ${name} (${selectedLetter})!`, 'success');
-  };
-
-  const handleLiveConnect = async () => {
-    const name = driveName.trim() || `Storage Bank Vault (${selectedLetter})`;
-    if (isSelectedLetterUsed) {
-      addToast(`Drive ${selectedLetter} is already in use. Pick another letter.`, 'warning');
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      const result = await connectWindowsFolder(name, selectedLetter);
-      if (result) {
-        downloadBat(selectedLetter, name);
-        setJustCreated({
-          name,
-          letter: selectedLetter,
-          exportedCount: result.exportedCount
-        });
-      }
-    } finally {
-      setIsSyncing(false);
-    }
+    addToast(`Generated auto-mounter .BAT script for ${name} (${selectedLetter})!`, 'success');
   };
 
   return (
@@ -133,7 +108,7 @@ export function WindowsDriveModal() {
       <div
         className="modal-content"
         onClick={e => e.stopPropagation()}
-        style={{ maxWidth: '580px', width: '92vw', borderRadius: '24px', maxHeight: '92vh', overflowY: 'auto' }}
+        style={{ maxWidth: '540px', width: '92vw', borderRadius: '24px', maxHeight: '92vh', overflowY: 'auto' }}
       >
         {/* Header */}
         <div className="modal-header" style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -143,7 +118,7 @@ export function WindowsDriveModal() {
             </div>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Windows PC Vault Drive</h3>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>Mount your real-time cloud storage directly as a virtual drive in Windows Explorer</p>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>Mount your Storage Vault as a real-time unlimited drive in Windows File Explorer</p>
             </div>
           </div>
           <button className="btn btn-ghost btn-icon" onClick={() => setIsDriveModalOpen(false)}><X size={18} /></button>
@@ -158,7 +133,7 @@ export function WindowsDriveModal() {
                 <CheckCircle2 size={22} color="#10b981" />
                 <div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981' }}>
-                    Drive {justCreated.letter} Configured & .BAT Downloaded!
+                    Drive {justCreated.letter} Registered & .BAT Downloaded!
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     Drive Name: "{justCreated.name}"
@@ -167,36 +142,36 @@ export function WindowsDriveModal() {
               </div>
               <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '10px 12px', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 <strong style={{ color: '#f59e0b' }}>⚡ Final Step:</strong> Open your Downloads folder → Double-click <code style={{ color: '#10b981' }}>Mount-CloudDrive-{justCreated.letter.replace(':', '')}-*.bat</code>.
-                Drive {justCreated.letter} will instantly appear in <em>This PC</em> with your custom volume name and unlimited cloud storage vault access!
+                Drive {justCreated.letter} will instantly appear in <em>This PC</em> with your custom drive name and unlimited storage vault access!
               </div>
             </div>
           )}
 
-          {/* Form */}
+          {/* Setup Form */}
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Sparkles size={16} color="var(--accent-primary)" />
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Configure Windows Cloud Drive</h4>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Select Drive Name & Key (Letter)</h4>
             </div>
 
-            {/* Drive Name Input */}
+            {/* Custom Drive Name Selector */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Custom Drive Name (Volume Label in Explorer)
+                Drive Name (Appears in File Explorer)
               </label>
               <input
                 type="text"
-                placeholder='e.g. "Storage Bank Unlimited Vault", "Cloud Vault"'
+                placeholder='e.g. "Storage Bank Vault", "My Unlimited Drive"'
                 value={driveName}
                 onChange={e => setDriveName(e.target.value)}
                 style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
 
-            {/* Drive Letter Picker */}
+            {/* Drive Key Selection Option */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Select Drive Letter
+                Select Drive Key (Letter)
               </label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {driveLetters.map(letter => {
@@ -223,18 +198,17 @@ export function WindowsDriveModal() {
               </div>
             </div>
 
-            {/* Warning if selected letter is already in use */}
+            {/* In-Use Warning Alert */}
             {isSelectedLetterUsed && (
               <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <AlertTriangle size={18} color="#f87171" style={{ flexShrink: 0 }} />
                 <div style={{ fontSize: '0.78rem', color: '#f87171', lineHeight: 1.4 }}>
-                  <strong>Warning:</strong> Drive letter <strong>{selectedLetter}</strong> is currently mounted or registered in your vault.
-                  Select a different letter above or remove the existing drive below.
+                  <strong>Warning:</strong> Drive key <strong>{selectedLetter}</strong> is currently mounted or registered. Select a different letter key above or remove the active drive below.
                 </div>
               </div>
             )}
 
-            {/* Main Download BAT Action */}
+            {/* Single Download BAT Action */}
             <button
               className="btn btn-primary"
               disabled={isSelectedLetterUsed}
@@ -242,26 +216,15 @@ export function WindowsDriveModal() {
               style={{
                 width: '100%', padding: '13px', borderRadius: '12px', fontWeight: 800, gap: '10px',
                 justify: 'center', fontSize: '0.92rem', background: isSelectedLetterUsed ? 'var(--border-subtle)' : 'linear-gradient(135deg, #6366f1, #06b6d4)',
-                marginBottom: '10px', cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
+                cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
               }}
             >
               <Download size={16} /> Download Auto-Mount .BAT Script ({selectedLetter})
             </button>
 
-            {/* Live Connect Option */}
-            <button
-              className="btn btn-secondary"
-              disabled={isSelectedLetterUsed || isSyncing}
-              onClick={handleLiveConnect}
-              style={{ width: '100%', padding: '10px', borderRadius: '10px', fontSize: '0.8rem', justifyContent: 'center', gap: '8px' }}
-            >
-              {isSyncing ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <FolderOpen size={14} />}
-              {isSyncing ? 'Connecting Local Folder...' : 'Or Select Local PC Folder to Sync Live'}
-            </button>
-
           </div>
 
-          {/* Active Mounted Drives */}
+          {/* Active Mounted Drives List */}
           {mountedDrives.length > 0 && (
             <div>
               <h4 style={{ fontSize: '0.88rem', fontWeight: 800, margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -280,7 +243,7 @@ export function WindowsDriveModal() {
                           {drive.name} <span style={{ color: '#f59e0b', fontSize: '0.78rem' }}>({drive.driveLetter})</span>
                         </div>
                         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                          <span style={{ color: '#10b981', fontWeight: 700 }}>● UNLIMITED VAULT ACTIVE</span> · {drive.syncedFilesCount || 0} items
+                          <span style={{ color: '#10b981', fontWeight: 700 }}>● UNLIMITED VAULT ACTIVE</span>
                         </div>
                       </div>
                     </div>
