@@ -3,7 +3,7 @@ import { useStorage } from '../context/StorageContext';
 import { X, FolderPlus } from 'lucide-react';
 
 export function NewFolderModal() {
-  const { isNewFolderOpen, setIsNewFolderOpen, createFolder, resetAndRebuildFolderSystem } = useStorage();
+  const { isNewFolderOpen, setIsNewFolderOpen, createFolder } = useStorage();
   const [folderName, setFolderName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#6366f1');
 
@@ -76,28 +76,13 @@ export function NewFolderModal() {
           </div>
         </div>
 
-        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              if (window.confirm('Wipe legacy folders and rebuild folder database fresh? (All files will be safely moved to Root Vault)')) {
-                resetAndRebuildFolderSystem();
-                setIsNewFolderOpen(false);
-              }
-            }}
-            style={{ fontSize: '0.75rem', color: '#f87171', padding: '4px 8px' }}
-          >
-            Reset Folders
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={() => setIsNewFolderOpen(false)}>
+            Cancel
           </button>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-ghost" onClick={() => setIsNewFolderOpen(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={handleCreate} disabled={!folderName.trim()}>
-              Create Folder
-            </button>
-          </div>
+          <button className="btn btn-primary" onClick={handleCreate} disabled={!folderName.trim()}>
+            Create Folder
+          </button>
         </div>
       </div>
     </div>

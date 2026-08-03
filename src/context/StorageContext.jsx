@@ -563,39 +563,14 @@ export function StorageProvider({ children }) {
     return 'document';
   };
 
-  // Folder System Reset & Rebuild Engine
-  const resetAndRebuildFolderSystem = async () => {
-    try {
-      setFiles(prev => prev.map(f => ({ ...f, folderId: null })));
-      setFolders([]);
-
-      localStorage.removeItem('aether_ls_vault_folders');
-
-      const db = await initDB();
-      if (db && db.objectStoreNames.contains('folders')) {
-        const tx = db.transaction('folders', 'readwrite');
-        tx.objectStore('folders').clear();
-      }
-
-      setCurrentFolderId(null);
-      setFolderPath([{ id: null, name: 'My Vault' }]);
-
-      addToast('Folder system wiped & rebuilt fresh! All files safely preserved in Root Vault.', 'success');
-      logActivity('SYSTEM', 'Reset and rebuilt Folder System fresh', 'success');
-    } catch (err) {
-      console.error(err);
-      addToast('Failed to reset folder system.', 'error');
-    }
-  };
-
   // Folder Operations
-  const createFolder = async (name, color = '#6366f1', targetParentId = currentFolderId) => {
-    if (!user || !name.trim()) return null;
+  const createFolder = async (name, color = '#6366f1') => {
+    if (!user || !name.trim()) return;
     const now = new Date().toISOString();
     const folderRecord = {
       id: `fold-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       userId: user.id,
-      parentId: targetParentId,
+      parentId: currentFolderId,
       name: name.trim(),
       color,
       starred: false,
@@ -606,9 +581,8 @@ export function StorageProvider({ children }) {
     setFolders(prev => [folderRecord, ...prev]);
     await dbSaveFolder(folderRecord);
     syncFolderToSupabase(folderRecord);
-    addToast(`Created folder "${name.trim()}"`, 'success');
-    logActivity('CREATE_FOLDER', `Created folder "${name.trim()}"`, 'success');
-    return folderRecord;
+    addToast(`Created folder "${name}"`, 'success');
+    logActivity('CREATE_FOLDER', `Created folder "${name}"`, 'success');
   };
 
   const saveFile = async (fileObj) => {
@@ -1002,7 +976,7 @@ export function StorageProvider({ children }) {
 
       if (searchQuery.trim()) {
         return file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               file.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+          file.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
       const normFolder = file.folderId ? String(file.folderId) : null;
@@ -1142,7 +1116,6 @@ export function StorageProvider({ children }) {
       removeToast,
       uploadFiles,
       createFolder,
-      resetAndRebuildFolderSystem,
       saveFile,
       replaceFile,
       toggleStar,

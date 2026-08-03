@@ -15,7 +15,8 @@ import {
 import { useStorage } from '../context/StorageContext';
 
 export function DesktopDriveModal({ isOpen, onClose }) {
-  const { addToast, user, windowsDrive, connectWindowsFolder, disconnectWindowsFolder } = useStorage();
+  const { addToast, user, mountedDrives = [], connectWindowsFolder, disconnectWindowsFolder } = useStorage();
+  const windowsDrive = mountedDrives[0] || { mounted: false };
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('live'); // 'live' | 'oneclick' | 'manual' | 'rclone'
 
