@@ -518,7 +518,7 @@ export function StorageProvider({ children }) {
         const fileRecord = {
           id: uniqueId,
           userId: user.id,
-          folderId: targetFolderId,
+          folderId: f.folderId !== undefined ? f.folderId : targetFolderId,
           name: fileName,
           type: fileType,
           category,
@@ -743,16 +743,17 @@ export function StorageProvider({ children }) {
   const navigateToFolder = (folderId, folderName = 'Folder') => {
     setActiveCategory('all');
     setSearchQuery('');
-    setCurrentFolderId(folderId);
+    const targetId = folderId ? String(folderId) : null;
+    setCurrentFolderId(targetId);
 
-    if (!folderId) {
+    if (!targetId) {
       setFolderPath([{ id: null, name: 'My Vault' }]);
       return;
     }
 
     // Reconstruct exact root-to-folder hierarchy path
     const path = [];
-    let currId = folderId;
+    let currId = targetId;
     const visited = new Set();
 
     while (currId && !visited.has(String(currId))) {
@@ -760,9 +761,9 @@ export function StorageProvider({ children }) {
       const targetFold = folders.find(f => String(f.id) === String(currId));
       if (targetFold) {
         path.unshift({ id: targetFold.id, name: targetFold.name });
-        currId = targetFold.parentId;
+        currId = targetFold.parentId ? String(targetFold.parentId) : null;
       } else {
-        path.unshift({ id: folderId, name: folderName });
+        path.unshift({ id: targetId, name: folderName });
         break;
       }
     }

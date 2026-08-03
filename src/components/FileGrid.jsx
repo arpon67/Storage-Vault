@@ -471,7 +471,7 @@ function FileGridCard({ file, activeMenuId, setActiveMenuId, onRename, onEditMed
 }
 
 function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert, onDownload, onPreview, onShare }) {
-  const { moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, setMoveModalTarget } = useStorage();
+  const { navigateToFolder, moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, setMoveModalTarget } = useStorage();
 
   const isMedia = item.category === 'image' || item.category === 'video';
 
@@ -496,6 +496,11 @@ function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert
     >
       {!item.inTrash ? (
         <>
+          {isFolder && (
+            <button className="btn btn-ghost" onClick={() => { navigateToFolder(item.id, item.name); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-primary)', fontWeight: '700' }}>
+              <Folder size={14} color="var(--accent-primary)" fill="var(--accent-primary)" /> Open Folder
+            </button>
+          )}
           {!isFolder && onPreview && (
             <button className="btn btn-ghost" onClick={() => { onPreview(); onClose(); }} style={menuBtnStyle}>
               <Eye size={14} /> Open Preview
