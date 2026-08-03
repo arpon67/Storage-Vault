@@ -244,11 +244,32 @@ export function StorageProvider({ children }) {
   };
 
   const disconnectWindowsFolder = () => {
+    activeDriveHandlesRef.current.clear();
     setMountedDrives([]);
     localStorage.removeItem('storagebank_mounted_drives');
     localStorage.removeItem('storagebank_windowsDrive');
     addToast('Unmounted all active Windows Virtual Drives.', 'info');
   };
+
+  // ── Real-Time Bi-Directional Background Sync Loop ────────────────────────────
+  useEffect(() => {
+    if (activeDriveHandlesRef.current.size === 0) return;
+
+    const syncAllHandles = async () => {
+      for (const [id, handle] of activeDriveHandlesRef.current.entries()) {
+        try {
+          await syncFolderHandleToVault(handle);
+          await syncVaultToFolderHandle(handle);
+        } catch (err) {
+          console.warn('Real-time handle sync warning:', err);
+        }
+      }
+    };
+
+    syncAllHandles();
+    const interval = setInterval(syncAllHandles, 3000);
+    return () => clearInterval(interval);
+  }, [files.length, folders.length]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');

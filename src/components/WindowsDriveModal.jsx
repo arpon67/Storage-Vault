@@ -269,7 +269,7 @@ export function WindowsDriveModal() {
               </div>
             )}
 
-            {/* Script Download Buttons */}
+            {/* Script Download & Live Sync Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 className="btn btn-primary"
@@ -281,7 +281,27 @@ export function WindowsDriveModal() {
                   cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
                 }}
               >
-                <Download size={16} /> Download Auto-Mount .BAT Script ({selectedLetter})
+                <Download size={16} /> 1. Download Auto-Mount .BAT Script ({selectedLetter})
+              </button>
+
+              <button
+                className="btn btn-secondary"
+                disabled={isSelectedLetterUsed || isSyncing}
+                onClick={async () => {
+                  const name = driveName.trim() || `Storage Bank Vault (${selectedLetter})`;
+                  setIsSyncing(true);
+                  try {
+                    await connectWindowsFolder(name, selectedLetter);
+                  } finally {
+                    setIsSyncing(false);
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: '10px', fontSize: '0.82rem',
+                  justify: 'center', gap: '8px', color: '#10b981', borderColor: 'rgba(16,185,129,0.3)'
+                }}
+              >
+                <FolderOpen size={15} /> 2. Connect Drive Folder ({selectedLetter}) for Real-Time Live Sync
               </button>
 
               <button
@@ -289,11 +309,11 @@ export function WindowsDriveModal() {
                 disabled={isSelectedLetterUsed}
                 onClick={handleGeneratePs1}
                 style={{
-                  width: '100%', padding: '9px', borderRadius: '10px', fontSize: '0.8rem',
-                  justify: 'center', gap: '8px'
+                  width: '100%', padding: '8px', borderRadius: '10px', fontSize: '0.78rem',
+                  justify: 'center', gap: '8px', opacity: 0.8
                 }}
               >
-                <Terminal size={14} /> Download PowerShell .PS1 Mounter
+                <Terminal size={14} /> Download PowerShell .PS1 Script
               </button>
             </div>
 
