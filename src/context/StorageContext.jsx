@@ -947,7 +947,7 @@ export function StorageProvider({ children }) {
   };
 
   const displayedFolders = useMemo(() => {
-    const normCurrent = currentFolderId ? String(currentFolderId) : null;
+    const normCurrent = (currentFolderId !== null && currentFolderId !== undefined && currentFolderId !== '') ? String(currentFolderId) : null;
     return folders.filter(folder => {
       if (activeCategory === 'trash') return folder.inTrash;
       if (folder.inTrash) return false;
@@ -957,13 +957,13 @@ export function StorageProvider({ children }) {
       if (searchQuery.trim()) {
         return folder.name.toLowerCase().includes(searchQuery.toLowerCase());
       }
-      const normParent = folder.parentId ? String(folder.parentId) : null;
+      const normParent = (folder.parentId !== null && folder.parentId !== undefined && folder.parentId !== '' && folder.parentId !== 'null') ? String(folder.parentId) : null;
       return normParent === normCurrent;
     });
   }, [folders, activeCategory, currentFolderId, searchQuery]);
 
   const displayedFiles = useMemo(() => {
-    const normCurrent = currentFolderId ? String(currentFolderId) : null;
+    const normCurrent = (currentFolderId !== null && currentFolderId !== undefined && currentFolderId !== '') ? String(currentFolderId) : null;
     let result = files.filter(file => {
       if (activeCategory === 'trash') return file.inTrash;
       if (file.inTrash) return false;
@@ -973,8 +973,12 @@ export function StorageProvider({ children }) {
         return file.tags?.includes('edited') || file.name.includes('_edited') || file.category === 'edited';
       }
 
-      // Category filters (photos, docs, audio, video, code, archive) show ALL matching files across all folders
+      // Category filters (photos, docs, audio, video, code, archive)
       if (['image', 'document', 'video', 'audio', 'code', 'archive'].includes(activeCategory)) {
+        if (normCurrent) {
+          const normFolder = (file.folderId !== null && file.folderId !== undefined && file.folderId !== '' && file.folderId !== 'null') ? String(file.folderId) : null;
+          return file.category === activeCategory && normFolder === normCurrent;
+        }
         return file.category === activeCategory;
       }
 
@@ -983,7 +987,7 @@ export function StorageProvider({ children }) {
           file.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      const normFolder = file.folderId ? String(file.folderId) : null;
+      const normFolder = (file.folderId !== null && file.folderId !== undefined && file.folderId !== '' && file.folderId !== 'null') ? String(file.folderId) : null;
       return normFolder === normCurrent;
     });
 

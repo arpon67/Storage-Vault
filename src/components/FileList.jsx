@@ -131,6 +131,7 @@ export function FileList() {
                 <tr
                   key={folder.id}
                   onClick={() => !folder.inTrash && navigateToFolder(folder.id, folder.name)}
+                  onDoubleClick={() => !folder.inTrash && navigateToFolder(folder.id, folder.name)}
                   style={{
                     borderBottom: '1px solid var(--border-subtle)',
                     cursor: 'pointer',
@@ -169,6 +170,14 @@ export function FileList() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                       {!folder.inTrash ? (
                         <>
+                          <button
+                            className="btn btn-primary"
+                            title="Open Folder"
+                            onClick={(e) => { e.stopPropagation(); navigateToFolder(folder.id, folder.name); }}
+                            style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '8px', gap: '4px' }}
+                          >
+                            <Folder size={12} /> Open
+                          </button>
                           <button className="btn btn-ghost btn-icon" title="Star Folder" onClick={(e) => { e.stopPropagation(); toggleStar(folder.id, true); }}>
                             <Star size={14} fill={folder.starred ? '#f59e0b' : 'none'} color={folder.starred ? '#f59e0b' : 'var(--text-muted)'} />
                           </button>
