@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
 import {
   X, HardDrive, Trash2, Sparkles, Monitor, Download,
-  CheckCircle2, AlertTriangle, FileCode, Terminal
+  CheckCircle2, AlertTriangle, FileCode, Terminal, FolderOpen
 } from 'lucide-react';
 
 export function WindowsDriveModal() {
@@ -12,12 +12,14 @@ export function WindowsDriveModal() {
     mountedDrives,
     unmountDrive,
     registerDrive,
+    connectWindowsFolder,
     addToast
   } = useStorage();
 
   const [driveName, setDriveName] = useState('Storage Bank Vault');
   const [selectedLetter, setSelectedLetter] = useState('Z:');
   const [justCreated, setJustCreated] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   if (!isDriveModalOpen) return null;
 
