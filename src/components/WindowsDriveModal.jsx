@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStorage } from '../context/StorageContext';
 import {
   X, HardDrive, Trash2, Sparkles, Monitor, Download,
-  CheckCircle2, AlertTriangle, FileCode, Terminal, FolderOpen
+  CheckCircle2, AlertTriangle, FileCode, Terminal
 } from 'lucide-react';
 
 export function WindowsDriveModal() {
@@ -12,14 +12,12 @@ export function WindowsDriveModal() {
     mountedDrives,
     unmountDrive,
     registerDrive,
-    connectWindowsFolder,
     addToast
   } = useStorage();
 
   const [driveName, setDriveName] = useState('Storage Bank Vault');
   const [selectedLetter, setSelectedLetter] = useState('Z:');
   const [justCreated, setJustCreated] = useState(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   if (!isDriveModalOpen) return null;
 
@@ -71,7 +69,7 @@ export function WindowsDriveModal() {
       `    echo =========================================================================`,
       `    echo.`,
       `    echo Opening ${letter} in Windows File Explorer...`,
-      `    start explorer.exe ${letter}\\`,
+      `    start "" explorer.exe "${letter}\\"`,
       `) else (`,
       `    echo.`,
       `    echo ERROR: Drive ${letter} could not be mounted. Please try another drive letter.`,
@@ -271,7 +269,7 @@ export function WindowsDriveModal() {
               </div>
             )}
 
-            {/* Script Download & Live Sync Buttons */}
+            {/* Script Download Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 className="btn btn-primary"
@@ -283,27 +281,7 @@ export function WindowsDriveModal() {
                   cursor: isSelectedLetterUsed ? 'not-allowed' : 'pointer'
                 }}
               >
-                <Download size={16} /> 1. Download Auto-Mount .BAT Script ({selectedLetter})
-              </button>
-
-              <button
-                className="btn btn-secondary"
-                disabled={isSelectedLetterUsed || isSyncing}
-                onClick={async () => {
-                  const name = driveName.trim() || `Storage Bank Vault (${selectedLetter})`;
-                  setIsSyncing(true);
-                  try {
-                    await connectWindowsFolder(name, selectedLetter);
-                  } finally {
-                    setIsSyncing(false);
-                  }
-                }}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: '10px', fontSize: '0.82rem',
-                  justify: 'center', gap: '8px', color: '#10b981', borderColor: 'rgba(16,185,129,0.3)'
-                }}
-              >
-                <FolderOpen size={15} /> 2. Connect Drive Folder ({selectedLetter}) for Real-Time Live Sync
+                <Download size={16} /> Download Auto-Mount .BAT Script ({selectedLetter})
               </button>
 
               <button
@@ -311,11 +289,11 @@ export function WindowsDriveModal() {
                 disabled={isSelectedLetterUsed}
                 onClick={handleGeneratePs1}
                 style={{
-                  width: '100%', padding: '8px', borderRadius: '10px', fontSize: '0.78rem',
-                  justify: 'center', gap: '8px', opacity: 0.8
+                  width: '100%', padding: '9px', borderRadius: '10px', fontSize: '0.8rem',
+                  justify: 'center', gap: '8px'
                 }}
               >
-                <Terminal size={14} /> Download PowerShell .PS1 Script
+                <Terminal size={14} /> Download PowerShell .PS1 Mounter
               </button>
             </div>
 

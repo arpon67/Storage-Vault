@@ -36,8 +36,8 @@ if exist %LETTER%\ (
     echo  Unlimited Cloud Storage Vault is active on Drive %LETTER%
     echo =========================================================================
     echo.
-    echo Opening Drive %LETTER% in Windows File Explorer...
-    start explorer.exe %LETTER%\
+    echo Opening %LETTER% in Windows File Explorer...
+    start "" explorer.exe "%LETTER%\"
 ) else (
     echo.
     echo ERROR: Drive %LETTER% could not be mounted. Please try running as Administrator.

@@ -244,32 +244,11 @@ export function StorageProvider({ children }) {
   };
 
   const disconnectWindowsFolder = () => {
-    activeDriveHandlesRef.current.clear();
     setMountedDrives([]);
     localStorage.removeItem('storagebank_mounted_drives');
     localStorage.removeItem('storagebank_windowsDrive');
     addToast('Unmounted all active Windows Virtual Drives.', 'info');
   };
-
-  // ── Real-Time Bi-Directional Background Sync Loop ────────────────────────────
-  useEffect(() => {
-    if (activeDriveHandlesRef.current.size === 0) return;
-
-    const syncAllHandles = async () => {
-      for (const [id, handle] of activeDriveHandlesRef.current.entries()) {
-        try {
-          await syncFolderHandleToVault(handle);
-          await syncVaultToFolderHandle(handle);
-        } catch (err) {
-          console.warn('Real-time handle sync warning:', err);
-        }
-      }
-    };
-
-    syncAllHandles();
-    const interval = setInterval(syncAllHandles, 3000);
-    return () => clearInterval(interval);
-  }, [files.length, folders.length]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
@@ -518,7 +497,7 @@ export function StorageProvider({ children }) {
         const fileRecord = {
           id: uniqueId,
           userId: user.id,
-          folderId: f.folderId !== undefined ? f.folderId : targetFolderId,
+          folderId: targetFolderId,
           name: fileName,
           type: fileType,
           category,
@@ -743,17 +722,16 @@ export function StorageProvider({ children }) {
   const navigateToFolder = (folderId, folderName = 'Folder') => {
     setActiveCategory('all');
     setSearchQuery('');
-    const targetId = folderId ? String(folderId) : null;
-    setCurrentFolderId(targetId);
+    setCurrentFolderId(folderId);
 
-    if (!targetId) {
+    if (!folderId) {
       setFolderPath([{ id: null, name: 'My Vault' }]);
       return;
     }
 
     // Reconstruct exact root-to-folder hierarchy path
     const path = [];
-    let currId = targetId;
+    let currId = folderId;
     const visited = new Set();
 
     while (currId && !visited.has(String(currId))) {
@@ -761,9 +739,9 @@ export function StorageProvider({ children }) {
       const targetFold = folders.find(f => String(f.id) === String(currId));
       if (targetFold) {
         path.unshift({ id: targetFold.id, name: targetFold.name });
-        currId = targetFold.parentId ? String(targetFold.parentId) : null;
+        currId = targetFold.parentId;
       } else {
-        path.unshift({ id: targetId, name: folderName });
+        path.unshift({ id: folderId, name: folderName });
         break;
       }
     }
@@ -945,23 +923,27 @@ export function StorageProvider({ children }) {
   // Move Selected Items to Target Folder
   const moveItemsToFolder = async (itemIds, targetFolderId) => {
     const ids = Array.isArray(itemIds) ? itemIds : [itemIds];
+    const now = new Date().toISOString();
+
+    setFiles(prev => prev.map(f => ids.includes(f.id) ? { ...f, folderId: targetFolderId, updatedAt: now } : f));
+    setFolders(prev => prev.map(f => ids.includes(f.id) ? { ...f, parentId: targetFolderId, updatedAt: now } : f));
+
     await Promise.all(ids.map(id => {
       const targetFile = files.find(f => f.id === id);
       if (targetFile) {
-        const updated = { ...targetFile, folderId: targetFolderId, updatedAt: new Date().toISOString() };
+        const updated = { ...targetFile, folderId: targetFolderId, updatedAt: now };
         return Promise.all([dbSaveFile(updated), syncFileToSupabase(updated)]);
       }
       const targetFolder = folders.find(f => f.id === id);
       if (targetFolder) {
-        const updated = { ...targetFolder, parentId: targetFolderId, updatedAt: new Date().toISOString() };
+        const updated = { ...targetFolder, parentId: targetFolderId, updatedAt: now };
         return Promise.all([dbSaveFolder(updated), syncFolderToSupabase(updated)]);
       }
       return Promise.resolve();
     }));
 
-    await reloadVault();
     clearSelection();
-    addToast(`Moved ${ids.length} item(s) to target folder!`, 'success');
+    addToast(`Moved ${ids.length} item(s) to folder!`, 'success');
   };
 
   const displayedFolders = useMemo(() => {

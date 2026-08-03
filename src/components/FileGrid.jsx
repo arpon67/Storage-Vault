@@ -66,23 +66,35 @@ export function FileGrid() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const handleEmptyFolderDrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      uploadFiles(e.dataTransfer.files);
+    }
+  };
+
   if (displayedFolders.length === 0 && displayedFiles.length === 0) {
     const isInsideFolder = currentFolderId !== null;
     const currentFolderName = isInsideFolder
       ? (folderPath || []).slice(-1)[0]?.name || 'Folder'
       : null;
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '60px 20px',
-        textAlign: 'center',
-        background: 'var(--bg-surface)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px dashed var(--border-subtle)'
-      }}>
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleEmptyFolderDrop}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 20px',
+          textAlign: 'center',
+          background: 'var(--bg-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '2px dashed var(--border-subtle)',
+          transition: 'all 0.2s ease'
+        }}
+      >
         <div style={{
           width: '64px', height: '64px', borderRadius: '50%',
           background: isInsideFolder ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
@@ -94,18 +106,20 @@ export function FileGrid() {
         {isInsideFolder ? (
           <>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '6px', color: 'var(--text-primary)' }}>
-              📂 &ldquo;{currentFolderName}&rdquo; is open
+              📂 &ldquo;{currentFolderName}&rdquo; is ready
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '360px', marginBottom: '20px' }}>
-              This folder is empty. Upload files here or create a sub-folder.
+              This folder is active. Drag &amp; drop files here, or click upload to add items into this vault folder.
             </p>
-            <button
-              className="btn btn-primary"
-              onClick={() => setIsUploadOpen(true)}
-              style={{ padding: '10px 22px', borderRadius: '12px', fontWeight: 700, fontSize: '0.88rem' }}
-            >
-              Upload to &ldquo;{currentFolderName}&rdquo;
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setIsUploadOpen(true)}
+                style={{ padding: '10px 22px', borderRadius: '12px', fontWeight: 700, fontSize: '0.88rem' }}
+              >
+                Upload Files into &ldquo;{currentFolderName}&rdquo;
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -189,12 +203,41 @@ const MemoizedFileGridCard = React.memo(FileGridCard);
 
 
 function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
-  const { toggleStar, selectedItems, toggleSelectItem, navigateToFolder } = useStorage();
+  const { toggleStar, selectedItems, toggleSelectItem, navigateToFolder, files, folders, uploadFiles, moveItemsToFolder } = useStorage();
+  const [isDragOver, setIsDragOver] = useState(false);
   const isSelected = selectedItems.includes(folder.id);
 
+  const childFiles = files.filter(f => String(f.folderId) === String(folder.id) && !f.inTrash);
+  const childSubFolders = folders.filter(f => String(f.parentId) === String(folder.id) && !f.inTrash);
+  const totalContents = childFiles.length + childSubFolders.length;
+
   const handleCardClick = (e) => {
+    e.stopPropagation();
     if (!folder.inTrash) {
       navigateToFolder(folder.id, folder.name);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (!folder.inTrash) {
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        await uploadFiles(e.dataTransfer.files, folder.id);
+      }
     }
   };
 
@@ -202,18 +245,23 @@ function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
     <div
       className="glass-panel"
       onClick={handleCardClick}
+      onDoubleClick={handleCardClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       style={{
         borderRadius: 'var(--radius-md)',
         padding: '16px',
         position: 'relative',
         cursor: 'pointer',
-        transition: 'var(--transition-fast)',
+        transition: 'all 0.18s ease',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-        background: isSelected ? 'rgba(99, 102, 241, 0.16)' : 'var(--bg-surface)',
-        minHeight: '135px'
+        border: isDragOver ? '2px dashed #10b981' : isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+        background: isDragOver ? 'rgba(16, 185, 129, 0.15)' : isSelected ? 'rgba(99, 102, 241, 0.16)' : 'var(--bg-surface)',
+        minHeight: '135px',
+        transform: isDragOver ? 'scale(1.02)' : 'none'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -250,6 +298,9 @@ function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontSize: '0.68rem', padding: '2px 7px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {totalContents} item{totalContents !== 1 ? 's' : ''}
+          </span>
           {!folder.inTrash && (
             <button
               onClick={(e) => { e.stopPropagation(); toggleStar(folder.id, true); }}
@@ -273,6 +324,7 @@ function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
                 isFolder={true}
                 onClose={() => setActiveMenuId(null)}
                 onRename={onRename}
+                onOpenFolder={() => navigateToFolder(folder.id, folder.name)}
               />
             )}
           </div>
@@ -280,11 +332,12 @@ function FolderCard({ folder, activeMenuId, setActiveMenuId, onRename }) {
       </div>
 
       <div>
-        <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+        <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
           {folder.name}
         </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Folder • {new Date(folder.createdAt).toLocaleDateString()}
+        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Folder</span>
+          <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>Click to Open &rarr;</span>
         </div>
       </div>
     </div>
@@ -470,8 +523,8 @@ function FileGridCard({ file, activeMenuId, setActiveMenuId, onRename, onEditMed
   );
 }
 
-function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert, onDownload, onPreview, onShare }) {
-  const { navigateToFolder, moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, setMoveModalTarget } = useStorage();
+function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert, onDownload, onPreview, onShare, onOpenFolder }) {
+  const { moveToTrash, restoreFromTrash, deletePermanently, zipSelectedFiles, unzipFile, setMoveModalTarget } = useStorage();
 
   const isMedia = item.category === 'image' || item.category === 'video';
 
@@ -496,9 +549,9 @@ function ContextMenu({ item, isFolder, onClose, onRename, onEditMedia, onConvert
     >
       {!item.inTrash ? (
         <>
-          {isFolder && (
-            <button className="btn btn-ghost" onClick={() => { navigateToFolder(item.id, item.name); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-primary)', fontWeight: '700' }}>
-              <Folder size={14} color="var(--accent-primary)" fill="var(--accent-primary)" /> Open Folder
+          {isFolder && onOpenFolder && (
+            <button className="btn btn-ghost" onClick={() => { onOpenFolder(); onClose(); }} style={{ ...menuBtnStyle, color: 'var(--accent-primary)', fontWeight: 700 }}>
+              <Folder size={14} /> Open Folder
             </button>
           )}
           {!isFolder && onPreview && (

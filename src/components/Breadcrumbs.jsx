@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStorage } from '../context/StorageContext';
-import { ChevronRight, Folder, Home, Sparkles, CheckSquare } from 'lucide-react';
+import { ChevronRight, Folder, Home, Sparkles, CheckSquare, ArrowLeft } from 'lucide-react';
 
 export function Breadcrumbs() {
   const {
@@ -26,6 +26,8 @@ export function Breadcrumbs() {
     trash: 'Trash / Recycled Bin'
   };
 
+  const parentFolderItem = (folderPath || []).length > 1 ? folderPath[folderPath.length - 2] : null;
+
   return (
     <div style={{
       display: 'flex',
@@ -37,6 +39,15 @@ export function Breadcrumbs() {
     }}>
       {/* Trail Links */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        {parentFolderItem && activeCategory === 'all' && (
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigateToFolder(parentFolderItem.id, parentFolderItem.name)}
+            style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700, gap: '6px', marginRight: '6px' }}
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
+        )}
         {activeCategory !== 'all' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)' }}>
