@@ -69,7 +69,7 @@ export function WindowsDriveModal() {
       `    echo =========================================================================`,
       `    echo.`,
       `    echo Opening ${letter} in Windows File Explorer...`,
-      `    start "" explorer.exe "${letter}\\"`,
+      `    start explorer.exe ${letter}\\`,
       `) else (`,
       `    echo.`,
       `    echo ERROR: Drive ${letter} could not be mounted. Please try another drive letter.`,
